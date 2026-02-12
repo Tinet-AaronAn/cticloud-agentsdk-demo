@@ -5,12 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CTICloud AgentSDK Demo</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .cfg-grid { display: grid; grid-template-columns: 180px 1fr; gap: 6px 10px; align-items: center; }
+    .cfg-grid label { font-size: 12px; color: #555; }
+    .cfg-grid input { padding: 6px; }
+    .cfg { background: #fafafa; border: 1px solid #eee; padding: 12px; border-radius: 8px; }
+  </style>
 </head>
 <body>
   <h1>坐席工具条 Demo</h1>
   <div class="config">
-    <button id="loadEnv">加载配置</button>
+    <button id="loadEnv">加载 env.json</button>
     <span id="envStatus">env: 未加载</span>
+  </div>
+  <div class="cfg">
+    <h3>在线配置（无 env.json 时可直接填写）</h3>
+    <div class="cfg-grid">
+      <label>baseURL</label><input id="cfg_baseURL" placeholder="https://agent-gateway.example.com" />
+      <label>tenantId</label><input id="cfg_tenantId" placeholder="6000001" />
+      <label>agentNo</label><input id="cfg_agentNo" placeholder="1865" />
+      <label>sessionKey</label><input id="cfg_sessionKey" placeholder="3269..." />
+      <label>endpointType</label><input id="cfg_endpointType" placeholder="1|2|3" />
+      <label>endpoint</label><input id="cfg_endpoint" placeholder="软电话账号/手机号/分机" />
+      <label>customerNumber</label><input id="cfg_customerNumber" placeholder="134..." />
+      <label>initialStatus</label><input id="cfg_initialStatus" placeholder="1" />
+    </div>
+    <button id="applyConfig">应用配置</button>
   </div>
   <div class="toolbar">
     <button id="login">登录</button>

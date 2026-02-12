@@ -17,12 +17,30 @@ async function loadEnv() {
   try {
     const res = await fetch('./env.json');
     env = await res.json();
-    envStatus.textContent = 'env: 已加载';
+    envStatus.textContent = 'env: 已加载（文件）';
     log('[env] loaded', env);
   } catch {
-    envStatus.textContent = 'env: 未找到 env.json，使用示例值';
-    log('[env] env.json 未找到，参考 app/env.example.json');
+    envStatus.textContent = 'env: 未找到 env.json，使用在线配置';
+    log('[env] env.json 未找到，建议使用在线配置表单');
   }
+}
+
+function applyConfig() {
+  const baseURL = $('cfg_baseURL').value.trim();
+  const tenantId = $('cfg_tenantId').value.trim();
+  const agentNo = $('cfg_agentNo').value.trim();
+  const sessionKey = $('cfg_sessionKey').value.trim();
+  const endpointType = parseInt(($('cfg_endpointType').value || '1').trim(), 10);
+  const endpoint = $('cfg_endpoint').value.trim();
+  const customerNumber = $('cfg_customerNumber').value.trim();
+  const initialStatus = parseInt(($('cfg_initialStatus').value || '1').trim(), 10);
+  env = {
+    baseURL, tenantId, agentNo, sessionKey,
+    bindEndpoint: { endpointType, endpoint },
+    customerNumber, initialStatus
+  };
+  envStatus.textContent = 'env: 已加载（在线配置）';
+  log('[env] applied', env);
 }
 
 function subscribeEvents() {
@@ -42,7 +60,7 @@ function subscribeEvents() {
 }
 
 async function setupAndLogin() {
-  if (!env) { log('[login] 请先加载 env'); return; }
+  if (!env) { log('[login] 请先加载 env 或使用在线配置'); return; }
   AgentSDK = await getAgentSDK();
   AgentSDK.setup({
     baseURL: env.baseURL,
@@ -97,6 +115,7 @@ async function logout() {
 }
 
 $('loadEnv').onclick = loadEnv;
+$('applyConfig').onclick = applyConfig;
 $('login').onclick = setupAndLogin;
 $('previewObCall').onclick = previewObCall;
 $('sipLink').onclick = sipLink;
