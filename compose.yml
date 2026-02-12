@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  web:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./app:/app:ro
+    command: sh -c "npx --yes http-server -p 5173 . || python3 -m http.server 5173"
+    ports:
+      - "5173:5173"
