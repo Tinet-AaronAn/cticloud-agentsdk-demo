@@ -4,6 +4,7 @@
 
   // 默认参数（env.json 不存在时使用）
   const DEFAULT_CONFIG = {
+    sdkUrl: '', // AgentSDK UMD bundle URL（可选）
     baseURL: 'https://agent-gateway-hs-dev.cticloud.cn',
     tenantId: '6000001',
     agentNo: '1865',
@@ -192,7 +193,7 @@
 
     // SDK 操作
     async setupSDK() {
-      const AgentSDK = await getAgentSDK();
+      const AgentSDK = await getAgentSDK(this.config.sdkUrl || undefined);
       const { EventType } = AgentSDK;
 
       // 订阅事件
@@ -259,7 +260,7 @@
     async previewObCall() {
       if (!this.canCall) return;
       try {
-        const AgentSDK = await getAgentSDK();
+        const AgentSDK = await getAgentSDK(this.config.sdkUrl || undefined);
         const res = await AgentSDK.previewObCall({
           customerNumber: this.config.customerNumber,
           agentAnswerTimeout: 30,
@@ -278,7 +279,7 @@
     async sipLink() {
       if (!this.canAnswer) return;
       try {
-        const AgentSDK = await getAgentSDK();
+        const AgentSDK = await getAgentSDK(this.config.sdkUrl || undefined);
         await AgentSDK.sipLink();
         this.showToast('已接听', 'success');
       } catch (err) {
@@ -289,7 +290,7 @@
     async sipUnlink() {
       if (!this.canHangup) return;
       try {
-        const AgentSDK = await getAgentSDK();
+        const AgentSDK = await getAgentSDK(this.config.sdkUrl || undefined);
         await AgentSDK.sipUnlink();
         this.showToast('已挂断', 'info');
       } catch (err) {
@@ -300,7 +301,7 @@
     async logout() {
       if (!this.loggedIn) return;
       try {
-        const AgentSDK = await getAgentSDK();
+        const AgentSDK = await getAgentSDK(this.config.sdkUrl || undefined);
         const res = await AgentSDK.logout({ logoutMode: 1, unbindEndpoint: 0 });
         this.loggedIn = false;
         this.agentState = 'offline';
