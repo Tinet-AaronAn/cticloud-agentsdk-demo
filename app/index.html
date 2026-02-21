@@ -3,50 +3,251 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CTICloud AgentSDK Demo</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>CTICloud AgentSDK Demo — 坐席工具条</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
-    .cfg-grid { display: grid; grid-template-columns: 180px 1fr; gap: 6px 10px; align-items: center; }
-    .cfg-grid label { font-size: 12px; color: #555; }
-    .cfg-grid input { padding: 6px; }
-    .cfg { background: #fafafa; border: 1px solid #eee; padding: 12px; border-radius: 8px; }
+    :root {
+      --primary: #0d6efd;
+      --success: #198754;
+      --warning: #ffc107;
+      --danger: #dc3545;
+    }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f5f7fa; }
+    .navbar-brand { font-weight: 600; }
+    .status-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .status-idle { background: #6c757d; }
+    .status-busy { background: #ffc107; }
+    .status-talking { background: #198754; }
+    .status-offline { background: #dc3545; }
+    .offcanvas { width: 320px !important; }
+    .toolbar-btn { min-width: 100px; }
+    .event-table { font-size: 12px; }
+    .event-table th, .event-table td { padding: 4px 8px; }
+    .metric-card { background: #fff; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
+    .metric-value { font-size: 18px; font-weight: 600; }
+    .metric-label { font-size: 11px; color: #6b7280; }
+    .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1050; }
+    .form-label { font-size: 12px; color: #6b7280; margin-bottom: 2px; }
+    .form-control-sm { font-size: 13px; }
   </style>
 </head>
 <body>
-  <h1>坐席工具条 Demo</h1>
-  <div class="config">
-    <button id="loadEnv">加载 env.json</button>
-    <span id="envStatus">env: 未加载</span>
-  </div>
-  <div class="cfg">
-    <h3>在线配置（无 env.json 时可直接填写）</h3>
-    <div class="cfg-grid">
-      <label>baseURL</label><input id="cfg_baseURL" placeholder="https://agent-gateway.example.com" />
-      <label>tenantId</label><input id="cfg_tenantId" placeholder="6000001" />
-      <label>agentNo</label><input id="cfg_agentNo" placeholder="1865" />
-      <label>sessionKey</label><input id="cfg_sessionKey" placeholder="3269..." />
-      <label>endpointType</label><input id="cfg_endpointType" placeholder="1|2|3" />
-      <label>endpoint</label><input id="cfg_endpoint" placeholder="软电话账号/手机号/分机" />
-      <label>customerNumber</label><input id="cfg_customerNumber" placeholder="134..." />
-      <label>initialStatus</label><input id="cfg_initialStatus" placeholder="1" />
+  <div id="app">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand navbar-light bg-white border-bottom shadow-sm">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#"><i class="bi bi-telephone-fill text-primary me-2"></i>CTICloud AgentSDK Demo</a>
+        <div class="d-flex align-items-center gap-3">
+          <span class="badge bg-light text-dark border">
+            <span class="status-indicator" :class="statusClass"></span>
+            <span v-text="statusText"></span>
+          </span>
+          <button class="btn btn-outline-secondary btn-sm" @click="toggleTheme">
+            <i :class="themeIcon"></i>
+          </button>
+          <button class="btn btn-outline-primary btn-sm" @click="openConfig">
+            <i class="bi bi-gear"></i> 配置
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-3">
+      <div class="row g-3">
+        <!-- Left: Toolbar + Events -->
+        <div class="col-lg-8">
+          <!-- Toolbar -->
+          <div class="card shadow-sm mb-3">
+            <div class="card-body">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button class="btn btn-primary toolbar-btn" :disabled="loggedIn" @click="login">
+                  <i class="bi bi-box-arrow-in-right"></i> 登录
+                </button>
+                <button class="btn btn-success toolbar-btn" :disabled="!canCall" @click="previewObCall">
+                  <i class="bi bi-telephone-outbound"></i> 外呼
+                </button>
+                <button class="btn btn-info toolbar-btn" :disabled="!canAnswer" @click="sipLink">
+                  <i class="bi bi-telephone-inbound"></i> 接听
+                </button>
+                <button class="btn btn-warning toolbar-btn" :disabled="!canHangup" @click="sipUnlink">
+                  <i class="bi bi-telephone-x"></i> 挂断
+                </button>
+                <button class="btn btn-outline-danger toolbar-btn" :disabled="!loggedIn" @click="logout">
+                  <i class="bi bi-box-arrow-right"></i> 登出
+                </button>
+                <div class="ms-auto d-flex gap-2">
+                  <button class="btn btn-outline-secondary btn-sm" @click="runAutoTest" v-if="!autoTesting">
+                    <i class="bi bi-play-circle"></i> 一键自测
+                  </button>
+                  <span class="badge bg-secondary" v-if="autoTesting">自测中...</span>
+                </div>
+              </div>
+              <div class="mt-2 small text-muted" v-if="callInfo">
+                当前通话: <span v-text="callInfo"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Events Table -->
+          <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+              <span><i class="bi bi-activity"></i> 事件日志</span>
+              <div class="d-flex gap-2">
+                <select class="form-select form-select-sm" style="width:140px" v-model="eventFilter">
+                  <option value="">全部事件</option>
+                  <option value="AGENT_STATUS">坐席状态</option>
+                  <option value="PREVIEW_OBCALL">外呼事件</option>
+                  <option value="RINGING">振铃</option>
+                  <option value="RECONNECT">重连</option>
+                  <option value="TRANSCRIPT">转写</option>
+                  <option value="WEBRTC">WebRTC</option>
+                </select>
+                <button class="btn btn-outline-secondary btn-sm" @click="clearEvents">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+              <table class="table table-hover table-sm event-table mb-0">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th style="width:40px">#</th>
+                    <th style="width:140px">时间</th>
+                    <th style="width:160px">事件</th>
+                    <th>摘要</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(e, i) in filteredEvents" :key="i" @click="toggleEventDetail(i)">
+                    <td v-text="events.length - i"></td>
+                    <td v-text="e.time"></td>
+                    <td><code v-text="e.type"></code></td>
+                    <td>
+                      <span v-text="e.summary"></span>
+                      <i class="bi bi-chevron-expand ms-1" v-if="!e.expanded"></i>
+                      <i class="bi bi-chevron-contract ms-1" v-if="e.expanded"></i>
+                    </td>
+                  </tr>
+                  <tr v-if="!events.length">
+                    <td colspan="4" class="text-center text-muted py-4">暂无事件</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer py-2" v-if="selectedEvent">
+              <pre class="mb-0 small" style="max-height: 200px; overflow: auto;" v-text="selectedEventDetail"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Metrics -->
+        <div class="col-lg-4">
+          <div class="card shadow-sm mb-3">
+            <div class="card-header py-2"><i class="bi bi-speedometer2"></i> WebRTC 指标</div>
+            <div class="card-body">
+              <div class="metric-card">
+                <div class="metric-value" v-text="webrtc.jitter">--</div>
+                <div class="metric-label">抖动 (ms)</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-value" v-text="webrtc.packetLoss">--</div>
+                <div class="metric-label">丢包率 (%)</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-value" v-text="webrtc.rtt">--</div>
+                <div class="metric-label">RTT (ms)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm">
+            <div class="card-header py-2"><i class="bi bi-info-circle"></i> 使用说明</div>
+            <div class="card-body small">
+              <ol class="mb-0">
+                <li>点击右上角 <b>配置</b> 检查/修改参数</li>
+                <li>点击 <b>登录</b> 完成坐席登录</li>
+                <li>点击 <b>外呼</b> 发起预览外呼</li>
+                <li>软电话模式下点击 <b>接听</b>/<b>挂断</b></li>
+                <li>点击 <b>登出</b> 退出</li>
+              </ol>
+              <div class="mt-2">
+                <span class="badge bg-info">URL 加 <code>?autotest=1</code> 可自动跑全流程</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <button id="applyConfig">应用配置</button>
+
+    <!-- Config Offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" ref="configPanel" @hidden="configOpen=false">
+      <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title"><i class="bi bi-gear"></i> 配置</h5>
+        <button type="button" class="btn-close" @click="closeConfig"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="mb-3">
+          <label class="form-label">baseURL</label>
+          <input class="form-control form-control-sm" v-model="config.baseURL" placeholder="https://...">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">tenantId</label>
+          <input class="form-control form-control-sm" v-model="config.tenantId">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">agentNo</label>
+          <input class="form-control form-control-sm" v-model="config.agentNo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">sessionKey</label>
+          <input class="form-control form-control-sm" v-model="config.sessionKey" type="password">
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label">endpointType</label>
+            <select class="form-select form-select-sm" v-model="config.bindEndpoint.endpointType">
+              <option :value="1">PSTN</option>
+              <option :value="2">分机</option>
+              <option :value="3">软电话</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">endpoint</label>
+            <input class="form-control form-control-sm" v-model="config.bindEndpoint.endpoint">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">customerNumber</label>
+          <input class="form-control form-control-sm" v-model="config.customerNumber" placeholder="外呼号码">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">initialStatus</label>
+          <select class="form-select form-select-sm" v-model="config.initialStatus">
+            <option :value="1">空闲</option>
+            <option :value="2">忙碌</option>
+            <option :value="3">整理</option>
+          </select>
+        </div>
+        <button class="btn btn-primary w-100" @click="applyConfig">应用配置</button>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container">
+      <div v-for="(t, i) in toasts" :key="i" class="toast show" :class="'bg-' + t.type">
+        <div class="toast-body text-white d-flex justify-content-between">
+          <span v-text="t.msg"></span>
+          <button class="btn-close btn-close-white ms-2" @click="toasts.splice(i,1)"></button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="toolbar">
-    <button id="login">登录</button>
-    <button id="previewObCall">预览外呼</button>
-    <button id="sipLink">接听</button>
-    <button id="sipUnlink">挂断</button>
-    <button id="logout">登出</button>
-  </div>
-  <div class="status">
-    <h3>坐席状态</h3>
-    <pre id="status"></pre>
-  </div>
-  <div class="events">
-    <h3>事件日志</h3>
-    <pre id="logs"></pre>
-  </div>
-  <script type="module" src="main.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/petite-vue@0.4.1/dist/petite-vue.iife.js"></script>
+  <script src="sdk.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
