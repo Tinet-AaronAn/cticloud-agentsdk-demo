@@ -94,6 +94,23 @@
       return this.theme === 'dark' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
     },
 
+    // 新 UI 辅助方法
+    getEventDotClass(type) {
+      if (type.includes('AGENT_STATUS') || type.includes('LOGIN')) return 'type-status';
+      if (type.includes('CALL') || type.includes('RINGING') || type.includes('BRIDGE')) return 'type-call';
+      if (type.includes('WEBRTC')) return 'type-webrtc';
+      return 'type-other';
+    },
+
+    getToastIcon(type) {
+      switch (type) {
+        case 'success': return 'bi bi-check-circle-fill';
+        case 'error': return 'bi bi-x-circle-fill';
+        case 'warning': return 'bi bi-exclamation-triangle-fill';
+        default: return 'bi bi-info-circle-fill';
+      }
+    },
+
     // 方法
     showToast(msg, type = 'info') {
       this.toasts.push({ msg, type });
@@ -162,13 +179,10 @@
 
     openConfig() {
       this.configOpen = true;
-      const el = document.querySelector('.offcanvas');
-      if (el) new bootstrap.Offcanvas(el).show();
     },
 
     closeConfig() {
-      const el = document.querySelector('.offcanvas');
-      if (el) bootstrap.Offcanvas.getInstance(el)?.hide();
+      this.configOpen = false;
     },
 
     applyConfig() {
