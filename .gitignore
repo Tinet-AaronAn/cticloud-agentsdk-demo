@@ -1,3 +1,5 @@
 node_modules/
 dist/
 app/env.json
+test-results/
+test-report/
