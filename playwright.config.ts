@@ -8,8 +8,8 @@ export default defineConfig({
   workers: 1,
   reporter: [['html', { outputFolder: 'test-report' }], ['list']],
   use: {
-    // 使用 GitHub Pages 地址
-    baseURL: 'https://tinet-aaronan.github.io/cticloud-agentsdk-demo',
+    // 本地测试使用静态服务器
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -20,5 +20,11 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // 不需要本地服务器，直接访问 GitHub Pages
+  // 启动本地静态服务器
+  webServer: {
+    command: 'npx serve app -l 3000',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 10000,
+  },
 });
