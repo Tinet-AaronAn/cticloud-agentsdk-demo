@@ -242,82 +242,10 @@
 
     getEventDetail(type, data) {
       try {
-        // 创建一个可读的详情对象
-        const detail = {
-          事件类型: type,
-          时间戳: new Date().toISOString(),
-        };
-        
-        // 根据事件类型添加特定字段
-        switch (type) {
-          case 'AGENT_STATUS':
-            detail.坐席状态 = data.status?.state || 'unknown';
-            detail.设备状态 = this.getDeviceStatusText(data.status?.deviceStatus);
-            detail.坐席工号 = data.agentNo || '';
-            detail.设备号 = data.endpoint || '';
-            if (data.status?.reason) detail.原因 = data.status.reason;
-            break;
-          case 'PREVIEW_OBCALL_START':
-            detail.客户号码 = data.customerNumber || '';
-            detail.坐席号码 = data.agentNumber || '';
-            detail.呼叫ID = data.callId || '';
-            detail.外显号码 = data.displayNumber || '';
-            break;
-          case 'PREVIEW_OBCALL_RINGING':
-            detail.振铃侧 = data.ringingSide === 'agent' ? '坐席' : '客户';
-            detail.呼叫ID = data.callId || '';
-            detail.振铃时间 = data.ringingTime || '';
-            break;
-          case 'PREVIEW_OBCALL_BRIDGE':
-            detail.呼叫ID = data.callId || '';
-            detail.接通时间 = data.bridgeTime || '';
-            detail.坐席号码 = data.agentNumber || '';
-            detail.客户号码 = data.customerNumber || '';
-            break;
-          case 'PREVIEW_OBCALL_RESULT':
-            detail.呼叫结果 = data.result || '';
-            detail.挂断方 = data.hangupSide || '';
-            detail.挂断原因 = data.reason || data.hangupReason || '';
-            detail.通话时长 = data.duration ? `${data.duration}秒` : '';
-            detail.呼叫ID = data.callId || '';
-            break;
-          case 'RINGING':
-            detail.主叫号码 = data.callerNumber || '';
-            detail.被叫号码 = data.calledNumber || '';
-            detail.呼叫ID = data.callId || '';
-            break;
-          case 'RECONNECT_ATTEMPT':
-            detail.尝试次数 = data.attempt || 1;
-            detail.重连原因 = data.reason || '';
-            detail.下次重试 = data.nextRetryDelay ? `${data.nextRetryDelay}ms` : '';
-            break;
-          case 'TRANSCRIPT':
-            detail.转写内容 = data.text || '';
-            detail.说话人 = data.speaker || '';
-            detail.置信度 = data.confidence ? `${(data.confidence * 100).toFixed(1)}%` : '';
-            break;
-          case 'WEBRTC_STATS':
-            detail.抖动 = data.jitter ? `${data.jitter.toFixed(2)}ms` : '--';
-            detail.丢包率 = data.packetLossRate ? `${(data.packetLossRate * 100).toFixed(2)}%` : '--';
-            detail.往返时延 = data.rtt ? `${data.rtt.toFixed(0)}ms` : '--';
-            detail.码率 = data.bitrate ? `${data.bitrate}kbps` : '--';
-            break;
-          case 'LOGIN_ERROR':
-          case 'LOGIN_EXCEPTION':
-            detail.错误码 = data.code || data.errorCode || '';
-            detail.错误信息 = data.message || '';
-            break;
-          default:
-            // 其他事件显示原始数据
-            Object.assign(detail, data);
-        }
-        
-        return Object.entries(detail)
-          .filter(([k, v]) => v !== '' && v !== undefined && v !== null)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join('\n');
-      } catch (e) {
+        // 返回格式化的 JSON，显示完整事件数据
         return JSON.stringify(data, null, 2);
+      } catch (e) {
+        return String(data);
       }
     },
 
@@ -334,9 +262,43 @@
     },
 
     updateWebrtc(data) {
-      if (data.jitter != null) this.webrtc.jitter = data.jitter.toFixed(1);
-      if (data.packetLossRate != null) this.webrtc.packetLoss = (data.packetLossRate * 100).toFixed(2);
-      if (data.rtt != null) this.webrtc.rtt = data.rtt.toFixed(0);
+      // 兼容多种数据结构
+      // 结构1: { jitter, packetLossRate, rtt }
+      // 结构2: { stats: { jitter, packetLossRate, rtt } }
+      // 结构3: { audio: { jitter, packetsLost }, video: {...} }
+      
+      const stats = data.stats || data;
+      
+      // 抖动 (jitter)
+      if (stats.jitter != null) {
+        this.webrtc.jitter = typeof stats.jitter === 'number' 
+          ? stats.jitter.toFixed(1) 
+          : stats.jitter;
+      }
+      
+      // 丢包率 (packetLossRate 或 calculated)
+      if (stats.packetLossRate != null) {
+        this.webrtc.packetLoss = typeof stats.packetLossRate === 'number'
+          ? (stats.packetLossRate * 100).toFixed(2)
+          : stats.packetLossRate;
+      } else if (stats.packetsLost != null && stats.packetsReceived != null) {
+        const rate = stats.packetsLost / (stats.packetsLost + stats.packetsReceived);
+        this.webrtc.packetLoss = (rate * 100).toFixed(2);
+      }
+      
+      // 往返时延 (rtt 或 roundTripTime)
+      if (stats.rtt != null) {
+        this.webrtc.rtt = typeof stats.rtt === 'number'
+          ? stats.rtt.toFixed(0)
+          : stats.rtt;
+      } else if (stats.roundTripTime != null) {
+        this.webrtc.rtt = typeof stats.roundTripTime === 'number'
+          ? (stats.roundTripTime * 1000).toFixed(0) // 转换为 ms
+          : stats.roundTripTime;
+      }
+      
+      // 打印调试信息
+      console.log('WebRTC Stats:', stats);
     },
 
     toggleEventDetail(i) {
