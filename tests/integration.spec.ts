@@ -12,13 +12,13 @@ import { test, expect, Page } from '@playwright/test';
 
 // 测试配置
 const TEST_CONFIG = {
-  baseURL: 'http://agent-gateway-hs-dev.cticloud.cn',
+  baseURL: 'https://agent-gateway-hs-dev.cticloud.cn',
   tenantId: '6000001',
   agentNo: '1865',
-  sessionKey: '32693082-19c3-43a5-a260-8e3852639a2f',
+  sessionKey: '13202a72-046c-467e-a33b-e9aef5c8b98a',
   bindEndpoint: {
     endpointType: 3,
-    endpoint: '3016'
+    endpoint: '1883'
   },
   customerNumber: '13426307922',
   initialStatus: 1
@@ -59,15 +59,15 @@ test.describe('集成测试（真实环境）', () => {
     await page.waitForSelector('.navbar-brand');
     
     // 打开配置面板，填入测试配置
-    await page.getByRole('button', { name: /配置/ }).click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
     await page.waitForSelector('.offcanvas.show');
     
     // 填写配置
     await page.locator('.offcanvas').getByPlaceholder('https://...').fill(TEST_CONFIG.baseURL);
-    await page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("tenantId")') }).locator('input').fill(TEST_CONFIG.tenantId);
-    await page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("agentNo")') }).locator('input').fill(TEST_CONFIG.agentNo);
-    await page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill(TEST_CONFIG.sessionKey);
-    await page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("customerNumber")') }).locator('input').fill(TEST_CONFIG.customerNumber);
+    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("tenantId")') }).locator('input').fill(TEST_CONFIG.tenantId);
+    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("agentNo")') }).locator('input').fill(TEST_CONFIG.agentNo);
+    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill(TEST_CONFIG.sessionKey);
+    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("customerNumber")') }).locator('input').fill(TEST_CONFIG.customerNumber);
     
     // 应用配置
     await page.getByRole('button', { name: '应用配置' }).click();
@@ -76,7 +76,7 @@ test.describe('集成测试（真实环境）', () => {
     await page.waitForTimeout(1000);
     
     // 关闭配置面板（如果还打开的话）
-    const closeBtn = page.locator('.offcanvas.show .btn-close');
+    const closeBtn = page.locator('.offcanvas-close');
     if (await closeBtn.isVisible().catch(() => false)) {
       await closeBtn.click();
       await page.waitForTimeout(300);
@@ -130,11 +130,11 @@ test.describe('集成测试（真实环境）', () => {
 
   test('TC-INT-LOGIN-003: 登录失败-无效 sessionKey', async ({ page }) => {
     // 打开配置面板，修改 sessionKey
-    await page.getByRole('button', { name: /配置/ }).click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
     await page.waitForSelector('.offcanvas.show');
-    await page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill('invalid-key');
+    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill('invalid-key');
     await page.getByRole('button', { name: '应用配置' }).click();
-    await page.locator('.offcanvas .btn-close').click();
+    await page.locator('.offcanvas-close').click();
     await page.waitForTimeout(300);
     
     // 尝试登录
@@ -249,7 +249,7 @@ test.describe('集成测试（真实环境）', () => {
     await page.waitForSelector('.navbar-brand');
     
     // 打开配置面板验证
-    await page.getByRole('button', { name: /配置/ }).click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
     await page.waitForSelector('.offcanvas.show');
     
     // 验证配置已保存

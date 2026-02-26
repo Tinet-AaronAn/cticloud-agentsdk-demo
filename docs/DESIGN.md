@@ -38,13 +38,67 @@
 }
 
 ## SDK 集成兼容（UMD / ESM）
-- 统一入口：app/sdk.ts → `getAgentSDK()`
-  - 首选 UMD：若 `window.AgentSDK` 存在则直接使用（适合通过 <script> 引入 UMD 包的场景）。
-  - 兜底 ESM：尝试 `import('@cc/agent-sdk')`，返回 `AgentJsSDK || AgentSDK || default`（适合 npm 安装并由 bundler 打包的场景）。
-- 使用建议：
-  - UMD：在 index.html 中先行引入 AgentSDK UMD 脚本，再加载 main.js。
-  - ESM：在项目中安装 `@cc/agent-sdk`，并确保构建工具支持动态导入。
-- 错误提示：若两者均不可用，sdk.ts 会抛出错误提示引导用户正确集成。
+
+### UMD 模式（推荐）
+
+通过 `<script>` 标签引入 UMD 包：
+```html
+<script src="https://agent-gateway-hs-dev.cticloud.cn/js/AgentJsSDK/agent-sdk.umd.js"></script>
+```
+
+**UMD 导出结构**：
+```javascript
+window.AgentSDK = {
+  AgentSDK: Object,        // 命名导出（主对象）
+  default: Object,         // 默认导出（同 AgentSDK）
+  EventType: Object,       // 事件类型枚举
+  ErrorCodes: Object,      // 错误码枚举
+  AgentSdkError: Function, // 错误类
+  PROTOCOL_VERSION: String,// 协议版本
+  SDK_BUILD_TIME: String   // 构建时间
+}
+```
+
+**获取 SDK 对象**：
+```javascript
+// app/sdk.js
+window.getAgentSDK = async function() {
+  // 等待 SDK 加载
+  if (window.AgentSDK) {
+    // 优先使用 AgentSDK 属性，其次使用 default 属性
+    const sdk = window.AgentSDK.AgentSDK || window.AgentSDK.default;
+    if (sdk) return sdk;
+  }
+  // 等待加载（带超时）
+  // ...
+};
+```
+
+### ESM 模式（兜底）
+
+通过 npm 安装：
+```bash
+npm install @cc/agent-sdk
+```
+
+**导入方式**：
+```javascript
+import { AgentSDK } from '@cc/agent-sdk';
+// 或
+import AgentSDK from '@cc/agent-sdk';
+```
+
+### 使用建议
+
+- **UMD（推荐）**：在 index.html 中先行引入 AgentSDK UMD 脚本，再加载 main.js
+- **ESM（兜底）**：在项目中安装 `@cc/agent-sdk`，并确保构建工具支持动态导入
+
+### 错误处理
+
+若两者均不可用，sdk.js 会抛出错误提示：
+```
+AgentSDK 未找到。请确保 agent-sdk.umd.js 已正确加载。
+```
 
 ## 状态机设计
 顶层运行状态（前端视角）：
