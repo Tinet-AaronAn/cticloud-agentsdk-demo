@@ -62,25 +62,39 @@ test.describe('集成测试（真实环境）', () => {
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
     await page.waitForSelector('.offcanvas.show');
     
-    // 填写配置
-    await page.locator('.offcanvas').getByPlaceholder('https://...').fill(TEST_CONFIG.baseURL);
-    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("tenantId")') }).locator('input').fill(TEST_CONFIG.tenantId);
-    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("agentNo")') }).locator('input').fill(TEST_CONFIG.agentNo);
-    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill(TEST_CONFIG.sessionKey);
-    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("customerNumber")') }).locator('input').fill(TEST_CONFIG.customerNumber);
+    // 填写配置（使用更直接的选择器）
+    const offcanvas = page.locator('.offcanvas');
+    
+    // baseURL
+    await offcanvas.getByPlaceholder('https://...').fill(TEST_CONFIG.baseURL);
+    
+    // tenantId
+    await offcanvas.locator('.form-group').filter({ hasText: 'tenantId' }).locator('.form-input').fill(TEST_CONFIG.tenantId);
+    
+    // agentNo
+    await offcanvas.locator('.form-group').filter({ hasText: 'agentNo' }).locator('.form-input').fill(TEST_CONFIG.agentNo);
+    
+    // sessionKey
+    await offcanvas.locator('.form-group').filter({ hasText: 'sessionKey' }).locator('.form-input').fill(TEST_CONFIG.sessionKey);
+    
+    // endpointType
+    await offcanvas.locator('.form-group').filter({ hasText: 'endpointType' }).locator('.form-input').selectOption(String(TEST_CONFIG.bindEndpoint.endpointType));
+    
+    // endpoint
+    await offcanvas.locator('.form-group').filter({ hasText: 'endpoint' }).locator('.form-input').fill(TEST_CONFIG.bindEndpoint.endpoint);
+    
+    // customerNumber
+    await offcanvas.locator('.form-group').filter({ hasText: 'customerNumber' }).locator('.form-input').fill(TEST_CONFIG.customerNumber);
     
     // 应用配置
-    await page.getByRole('button', { name: '应用配置' }).click();
+    await offcanvas.getByRole('button', { name: '应用配置' }).click();
     
     // 等待配置保存
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(500);
     
-    // 关闭配置面板（如果还打开的话）
-    const closeBtn = page.locator('.offcanvas-close');
-    if (await closeBtn.isVisible().catch(() => false)) {
-      await closeBtn.click();
-      await page.waitForTimeout(300);
-    }
+    // 关闭配置面板
+    await page.locator('.offcanvas-close').click();
+    await page.waitForTimeout(300);
   });
 
   // ==================== 登录/登出测试 ====================
