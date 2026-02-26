@@ -376,20 +376,20 @@
       white-space: nowrap;
     }
     
-    .event-detail {
-      margin-top: 12px;
-      padding: 12px;
+    .event-json-inline {
+      margin: 8px 0 0 0;
+      padding: 10px;
       background: var(--gray-50);
-      border-radius: 8px;
+      border-radius: 6px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 11px;
-      line-height: 1.6;
+      font-size: 10px;
+      line-height: 1.5;
+      color: var(--gray-600);
       white-space: pre-wrap;
       word-break: break-all;
-      color: var(--gray-700);
-      border: 1px solid var(--gray-200);
-      max-height: 300px;
+      max-height: 120px;
       overflow-y: auto;
+      border: 1px solid var(--gray-200);
     }
     
     .event-empty {
@@ -813,11 +813,7 @@
                   <span class="event-time" v-text="e.time"></span>
                 </div>
                 <div class="event-summary" v-text="e.summary"></div>
-                <div class="event-detail" v-if="e.expanded">
-                  <pre class="event-json" v-text="e.detail"></pre>
-                </div>
-              </div>
-            </div>
+                <pre class="event-json-inline" v-text="e.detail"></pre>
               </div>
             </div>
           </div>

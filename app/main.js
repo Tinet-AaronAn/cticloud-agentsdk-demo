@@ -206,7 +206,10 @@
     },
 
     getEventSummary(type, data) {
-      switch (type) {
+      // 统一转大写处理
+      const upperType = type.toUpperCase().replace(/-/g, '_');
+      
+      switch (upperType) {
         case 'AGENT_STATUS':
           return `状态: ${data.status?.state || 'unknown'} | 设备: ${this.getDeviceStatusText(data.status?.deviceStatus)}`;
         case 'PREVIEW_OBCALL_START':
@@ -225,6 +228,7 @@
           const text = data.text || '';
           return `转写: ${text.substring(0, 25)}${text.length > 25 ? '...' : ''}`;
         case 'WEBRTC_STATS':
+        case 'WEBRTCSTATS':
           this.updateWebrtc(data);
           return `WebRTC | 抖动:${data.jitter?.toFixed(1) || '--'}ms 丢包:${data.packetLossRate ? (data.packetLossRate * 100).toFixed(1) : '--'}%`;
         case 'LOGIN_OK':
@@ -262,43 +266,32 @@
     },
 
     updateWebrtc(data) {
-      // 兼容多种数据结构
-      // 结构1: { jitter, packetLossRate, rtt }
-      // 结构2: { stats: { jitter, packetLossRate, rtt } }
-      // 结构3: { audio: { jitter, packetsLost }, video: {...} }
+      // 直接使用传入的数据（事件数据结构）
+      // { jitter, packetLossRate, rtt, ... }
       
-      const stats = data.stats || data;
-      
-      // 抖动 (jitter)
-      if (stats.jitter != null) {
-        this.webrtc.jitter = typeof stats.jitter === 'number' 
-          ? stats.jitter.toFixed(1) 
-          : stats.jitter;
+      // 抖动 (jitter) - 单位可能是秒，需要转换为毫秒
+      if (data.jitter != null) {
+        const jitterVal = typeof data.jitter === 'number' ? data.jitter : parseFloat(data.jitter);
+        this.webrtc.jitter = isNaN(jitterVal) ? '--' : jitterVal.toFixed(1);
       }
       
-      // 丢包率 (packetLossRate 或 calculated)
-      if (stats.packetLossRate != null) {
-        this.webrtc.packetLoss = typeof stats.packetLossRate === 'number'
-          ? (stats.packetLossRate * 100).toFixed(2)
-          : stats.packetLossRate;
-      } else if (stats.packetsLost != null && stats.packetsReceived != null) {
-        const rate = stats.packetsLost / (stats.packetsLost + stats.packetsReceived);
-        this.webrtc.packetLoss = (rate * 100).toFixed(2);
+      // 丢包率 (packetLossRate) - 0-1 的比例，需要转换为百分比
+      if (data.packetLossRate != null) {
+        const lossVal = typeof data.packetLossRate === 'number' ? data.packetLossRate : parseFloat(data.packetLossRate);
+        this.webrtc.packetLoss = isNaN(lossVal) ? '--' : (lossVal * 100).toFixed(2);
       }
       
-      // 往返时延 (rtt 或 roundTripTime)
-      if (stats.rtt != null) {
-        this.webrtc.rtt = typeof stats.rtt === 'number'
-          ? stats.rtt.toFixed(0)
-          : stats.rtt;
-      } else if (stats.roundTripTime != null) {
-        this.webrtc.rtt = typeof stats.roundTripTime === 'number'
-          ? (stats.roundTripTime * 1000).toFixed(0) // 转换为 ms
-          : stats.roundTripTime;
+      // 往返时延 (rtt) - 单位可能是秒，需要转换为毫秒
+      if (data.rtt != null) {
+        const rttVal = typeof data.rtt === 'number' ? data.rtt : parseFloat(data.rtt);
+        this.webrtc.rtt = isNaN(rttVal) ? '--' : rttVal.toFixed(0);
       }
       
-      // 打印调试信息
-      console.log('WebRTC Stats:', stats);
+      console.log('WebRTC Stats Updated:', {
+        jitter: this.webrtc.jitter,
+        packetLoss: this.webrtc.packetLoss,
+        rtt: this.webrtc.rtt
+      });
     },
 
     toggleEventDetail(i) {
