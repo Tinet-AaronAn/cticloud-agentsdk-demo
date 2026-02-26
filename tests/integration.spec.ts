@@ -94,9 +94,9 @@ test.describe('集成测试（真实环境）', () => {
     // 等待配置保存
     await page.waitForTimeout(500);
     
-    // 关闭配置面板
-    await page.locator('.offcanvas-close').click({ force: true });
-    await page.waitForTimeout(300);
+    // 关闭配置面板（点击遮罩层）
+    await page.locator('.offcanvas-overlay').click();
+    await page.waitForTimeout(500);
   });
 
   // ==================== 登录/登出测试 ====================
