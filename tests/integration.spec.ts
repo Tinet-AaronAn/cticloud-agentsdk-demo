@@ -63,7 +63,7 @@ test.describe('集成测试（真实环境）', () => {
     
     // 打开配置面板，填入测试配置
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.show');
+    await page.waitForSelector('.offcanvas.open');
     
     // 填写配置
     const offcanvas = page.locator('.offcanvas');
@@ -254,7 +254,7 @@ test.describe('集成测试（真实环境）', () => {
     
     // 打开配置面板验证
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.show');
+    await page.waitForSelector('.offcanvas.open');
     
     // 验证配置已保存
     const baseURLInput = page.locator('.offcanvas').getByPlaceholder('https://...');
