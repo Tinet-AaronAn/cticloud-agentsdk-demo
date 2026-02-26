@@ -80,8 +80,8 @@ test.describe('集成测试（真实环境）', () => {
     // endpointType
     await offcanvas.locator('.form-group').filter({ hasText: 'endpointType' }).locator('.form-input').selectOption(String(TEST_CONFIG.bindEndpoint.endpointType));
     
-    // endpoint
-    await offcanvas.locator('.form-group').filter({ hasText: 'endpoint' }).locator('.form-input').fill(TEST_CONFIG.bindEndpoint.endpoint);
+    // endpoint - 使用 has(label:has-text) 来精确匹配
+    await offcanvas.locator('.form-group').filter({ has: page.locator('label:has-text("endpoint")') }).filter({ hasNot: page.locator('label:has-text("endpointType")') }).locator('.form-input').fill(TEST_CONFIG.bindEndpoint.endpoint);
     
     // customerNumber
     await offcanvas.locator('.form-group').filter({ hasText: 'customerNumber' }).locator('.form-input').fill(TEST_CONFIG.customerNumber);
