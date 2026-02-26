@@ -57,6 +57,16 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
     await expect(loginBtn).toBeEnabled();
   });
 
+  test('TC-BTN-006: 未登录时置忙按钮禁用', async ({ page }) => {
+    const busyBtn = page.getByRole('button', { name: /置忙/ });
+    await expect(busyBtn).toBeDisabled();
+  });
+
+  test('TC-BTN-007: 未登录时置闲按钮禁用', async ({ page }) => {
+    const idleBtn = page.getByRole('button', { name: /置闲/ });
+    await expect(idleBtn).toBeDisabled();
+  });
+
   // ==================== 三、配置面板测试 ====================
 
   test('TC-CFG-001: 配置面板可打开', async ({ page }) => {
