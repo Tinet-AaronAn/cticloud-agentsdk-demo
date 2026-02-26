@@ -61,42 +61,8 @@ test.describe('集成测试（真实环境）', () => {
     await page.goto('/');
     await page.waitForSelector('.navbar-brand');
     
-    // 打开配置面板，填入测试配置
-    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.open');
-    
-    // 填写配置
-    const offcanvas = page.locator('.offcanvas');
-    
-    // baseURL
-    await offcanvas.getByPlaceholder('https://...').fill(TEST_CONFIG.baseURL);
-    
-    // tenantId
-    await offcanvas.locator('.form-group').filter({ hasText: 'tenantId' }).locator('.form-input').fill(TEST_CONFIG.tenantId);
-    
-    // agentNo
-    await offcanvas.locator('.form-group').filter({ hasText: 'agentNo' }).locator('.form-input').fill(TEST_CONFIG.agentNo);
-    
-    // sessionKey 已移除，通过 JSONP 动态获取
-    
-    // endpointType
-    await offcanvas.locator('.form-group').filter({ hasText: 'endpointType' }).locator('.form-input').selectOption(String(TEST_CONFIG.bindEndpoint.endpointType));
-    
-    // endpoint
-    await offcanvas.locator('.form-group').filter({ has: page.locator('label:has-text("endpoint")') }).filter({ hasNot: page.locator('label:has-text("endpointType")') }).locator('.form-input').fill(TEST_CONFIG.bindEndpoint.endpoint);
-    
-    // customerNumber
-    await offcanvas.locator('.form-group').filter({ hasText: 'customerNumber' }).locator('.form-input').fill(TEST_CONFIG.customerNumber);
-    
-    // 应用配置
-    await offcanvas.getByRole('button', { name: '应用配置' }).click();
-    
-    // 等待配置保存
-    await page.waitForTimeout(500);
-    
-    // 关闭配置面板（点击遮罩层）
-    await page.locator('.offcanvas-overlay').click();
-    await page.waitForTimeout(500);
+    // 注意：不再打开配置面板填写
+    // 测试将使用 env.test.json 中的默认配置
   });
 
   // ==================== 登录/登出测试 ====================
