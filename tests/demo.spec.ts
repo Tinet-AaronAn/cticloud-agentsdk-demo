@@ -26,7 +26,7 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
   });
 
   test('TC-UI-003: 初始状态为离线', async ({ page }) => {
-    const statusBadge = page.locator('.badge').first();
+    const statusBadge = page.locator('.status-badge').first();
     await expect(statusBadge).toContainText('离线');
   });
 
@@ -60,24 +60,24 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
   // ==================== 三、配置面板测试 ====================
 
   test('TC-CFG-001: 配置面板可打开', async ({ page }) => {
-    await page.getByRole('button', { name: /配置/ }).click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
     const offcanvas = page.locator('.offcanvas');
     await expect(offcanvas).toBeVisible();
   });
 
   test('TC-CFG-002: 配置面板包含所有必填项', async ({ page }) => {
-    await page.getByRole('button', { name: /配置/ }).click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
 
     // 用 label 文本定位相邻的输入框
     await expect(page.locator('.offcanvas').getByPlaceholder('https://...')).toBeVisible(); // baseURL
-    await expect(page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("tenantId")') }).locator('input')).toBeVisible();
-    await expect(page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("agentNo")') }).locator('input')).toBeVisible();
-    await expect(page.locator('.offcanvas').locator('.mb-3').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input')).toBeVisible();
+    await expect(page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("tenantId")') }).locator('input')).toBeVisible();
+    await expect(page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("agentNo")') }).locator('input')).toBeVisible();
+    await expect(page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input')).toBeVisible();
   });
 
   test('TC-CFG-003: 配置面板可关闭', async ({ page }) => {
-    await page.getByRole('button', { name: /配置/ }).click();
-    await page.locator('.offcanvas .btn-close').click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
+    await page.locator('.offcanvas-close').click();
 
     // 等待动画完成
     await page.waitForTimeout(500);
@@ -85,10 +85,10 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
   });
 
   test('TC-CFG-004: endpointType 选项正确', async ({ page }) => {
-    await page.getByRole('button', { name: /配置/ }).click();
+    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
 
     // 用 label 文本定位相邻的 select
-    const select = page.locator('.offcanvas').locator('.mb-3, .row').filter({ has: page.locator('label:has-text("endpointType")') }).locator('select');
+    const select = page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("endpointType")') }).locator('select');
     await expect(select).toBeVisible();
 
     // 检查选项
@@ -105,7 +105,7 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
   });
 
   test('TC-EVT-002: 初始状态无事件', async ({ page }) => {
-    const noEventRow = page.locator('td').filter({ hasText: '暂无事件' });
+    const noEventRow = page.locator('.event-empty').filter({ hasText: '暂无事件' });
     await expect(noEventRow).toBeVisible();
   });
 
@@ -154,7 +154,7 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
   // ==================== 八、主题切换测试 ====================
 
   test('TC-THEME-001: 主题切换按钮存在', async ({ page }) => {
-    const themeBtn = page.locator('.btn-outline-secondary').filter({ has: page.locator('.bi-sun-fill, .bi-moon-fill') });
+    const themeBtn = page.locator('.btn-outline').filter({ has: page.locator('.bi-sun-fill, .bi-moon-fill') });
     await expect(themeBtn).toBeVisible();
   });
 

@@ -37,7 +37,7 @@ async function waitForEvent(page: Page, eventType: string, timeout = 10000): Pro
 
 // 辅助函数：获取状态文本
 async function getStatusText(page: Page): Promise<string> {
-  const badge = page.locator('.badge').first();
+  const badge = page.locator('.status-badge').first();
   return await badge.textContent() || '';
 }
 
