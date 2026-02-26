@@ -150,6 +150,12 @@
     get canHangup() {
       return this.loggedIn && this.deviceStatus === 4;
     },
+    get canSetBusy() {
+      return this.loggedIn && this.agentState === 'idle';
+    },
+    get canSetIdle() {
+      return this.loggedIn && (this.agentState === 'busy' || this.agentState === 'wrapup');
+    },
     get filteredEvents() {
       if (!this.eventFilter) return this.events;
       return this.events.filter(e => e.type.includes(this.eventFilter));
@@ -456,6 +462,40 @@
         this.showToast('已挂断', 'info');
       } catch (err) {
         this.showToast(`挂断异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async setBusy() {
+      if (!this.canSetBusy) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        // 假设 SDK 提供 setAgentStatus 方法
+        if (AgentSDK.setAgentStatus) {
+          const res = await AgentSDK.setAgentStatus({ status: 2 }); // 2 = busy
+          this.showToast('已置忙', 'warning');
+          this.addEvent('SET_BUSY', res);
+        } else {
+          this.showToast('SDK 不支持置忙操作', 'danger');
+        }
+      } catch (err) {
+        this.showToast(`置忙异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async setIdle() {
+      if (!this.canSetIdle) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        // 假设 SDK 提供 setAgentStatus 方法
+        if (AgentSDK.setAgentStatus) {
+          const res = await AgentSDK.setAgentStatus({ status: 1 }); // 1 = idle
+          this.showToast('已置闲', 'success');
+          this.addEvent('SET_IDLE', res);
+        } else {
+          this.showToast('SDK 不支持置闲操作', 'danger');
+        }
+      } catch (err) {
+        this.showToast(`置闲异常: ${err.message}`, 'danger');
       }
     },
 

@@ -722,7 +722,7 @@
             </div>
             <div>
               <div class="card-title">连接控制</div>
-              <div class="card-subtitle">登录 / 登出 / 外呼</div>
+              <div class="card-subtitle">登录 / 置忙置闲 / 外呼</div>
             </div>
           </div>
           <div class="card-body">
@@ -730,6 +730,14 @@
               <button class="btn btn-primary" :disabled="loggedIn" @click="login">
                 <i class="bi bi-box-arrow-in-right"></i> 登录
               </button>
+              <button class="btn btn-warning" :disabled="!canSetBusy" @click="setBusy">
+                <i class="bi bi-pause-circle"></i> 置忙
+              </button>
+              <button class="btn btn-success" :disabled="!canSetIdle" @click="setIdle">
+                <i class="bi bi-play-circle"></i> 置闲
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top: 8px;">
               <button class="btn btn-success" :disabled="!canCall" @click="previewObCall">
                 <i class="bi bi-telephone-outbound"></i> 外呼
               </button>
