@@ -60,7 +60,7 @@ test.describe('集成测试（真实环境）', () => {
     
     // 打开配置面板，填入测试配置
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.show');
+    await page.waitForSelector('.offcanvas.open');
     
     // 填写配置（使用更直接的选择器）
     const offcanvas = page.locator('.offcanvas');
@@ -145,7 +145,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-LOGIN-003: 登录失败-无效 sessionKey', async ({ page }) => {
     // 打开配置面板，修改 sessionKey
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.show');
+    await page.waitForSelector('.offcanvas.open');
     await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill('invalid-key');
     await page.getByRole('button', { name: '应用配置' }).click();
     await page.locator('.offcanvas-close').click();
@@ -264,7 +264,7 @@ test.describe('集成测试（真实环境）', () => {
     
     // 打开配置面板验证
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.show');
+    await page.waitForSelector('.offcanvas.open');
     
     // 验证配置已保存
     const baseURLInput = page.locator('.offcanvas').getByPlaceholder('https://...');
