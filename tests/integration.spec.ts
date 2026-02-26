@@ -15,7 +15,7 @@ const TEST_CONFIG = {
   baseURL: 'https://agent-gateway-hs-dev.cticloud.cn',
   tenantId: '6000001',
   agentNo: '1865',
-  sessionKey: '13202a72-046c-467e-a33b-e9aef5c8b98a',
+  // sessionKey 已移除，通过 JSONP 动态获取
   bindEndpoint: {
     endpointType: 3,
     endpoint: '1883'
@@ -60,9 +60,9 @@ test.describe('集成测试（真实环境）', () => {
     
     // 打开配置面板，填入测试配置
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.open');
+    await page.waitForSelector('.offcanvas.show');
     
-    // 填写配置（使用更直接的选择器）
+    // 填写配置
     const offcanvas = page.locator('.offcanvas');
     
     // baseURL
@@ -74,13 +74,12 @@ test.describe('集成测试（真实环境）', () => {
     // agentNo
     await offcanvas.locator('.form-group').filter({ hasText: 'agentNo' }).locator('.form-input').fill(TEST_CONFIG.agentNo);
     
-    // sessionKey
-    await offcanvas.locator('.form-group').filter({ hasText: 'sessionKey' }).locator('.form-input').fill(TEST_CONFIG.sessionKey);
+    // sessionKey 已移除，通过 JSONP 动态获取
     
     // endpointType
     await offcanvas.locator('.form-group').filter({ hasText: 'endpointType' }).locator('.form-input').selectOption(String(TEST_CONFIG.bindEndpoint.endpointType));
     
-    // endpoint - 使用 has(label:has-text) 来精确匹配
+    // endpoint
     await offcanvas.locator('.form-group').filter({ has: page.locator('label:has-text("endpoint")') }).filter({ hasNot: page.locator('label:has-text("endpointType")') }).locator('.form-input').fill(TEST_CONFIG.bindEndpoint.endpoint);
     
     // customerNumber
@@ -142,24 +141,12 @@ test.describe('集成测试（真实环境）', () => {
     console.log('✅ 登出成功');
   });
 
-  test('TC-INT-LOGIN-003: 登录失败-无效 sessionKey', async ({ page }) => {
-    // 打开配置面板，修改 sessionKey
-    await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.open');
-    await page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input').fill('invalid-key');
-    await page.getByRole('button', { name: '应用配置' }).click();
-    await page.locator('.offcanvas-close').click();
-    await page.waitForTimeout(300);
-    
-    // 尝试登录
-    await page.getByRole('button', { name: /登录/ }).click();
-    
-    // 应该出现错误提示或状态仍为离线
-    await page.waitForTimeout(3000);
-    const status = await getStatusText(page);
-    expect(status).toContain('离线');
-    
-    console.log('✅ 无效 sessionKey 登录失败符合预期');
+  // TC-INT-LOGIN-003: 登录失败-无效 sessionKey
+  // 注意：sessionKey 现在通过 JSONP 动态获取，无法直接设置无效值
+  // 此测试用例暂时跳过
+  test.skip('TC-INT-LOGIN-003: 登录失败-无效 sessionKey（已跳过）', async ({ page }) => {
+    // 由于 sessionKey 现在通过 JSONP 动态获取，此测试用例不再适用
+    console.log('⚠️ sessionKey 现在通过 JSONP 动态获取，无法直接测试无效 sessionKey');
   });
 
   // ==================== 外呼测试 ====================
@@ -264,7 +251,7 @@ test.describe('集成测试（真实环境）', () => {
     
     // 打开配置面板验证
     await page.locator('.navbar-actions').getByRole('button', { name: /配置/ }).click();
-    await page.waitForSelector('.offcanvas.open');
+    await page.waitForSelector('.offcanvas.show');
     
     // 验证配置已保存
     const baseURLInput = page.locator('.offcanvas').getByPlaceholder('https://...');

@@ -72,7 +72,7 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
     await expect(page.locator('.offcanvas').getByPlaceholder('https://...')).toBeVisible(); // baseURL
     await expect(page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("tenantId")') }).locator('input')).toBeVisible();
     await expect(page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("agentNo")') }).locator('input')).toBeVisible();
-    await expect(page.locator('.offcanvas').locator('.form-group').filter({ has: page.locator('label:has-text("sessionKey")') }).locator('input')).toBeVisible();
+    // sessionKey 已移除，通过 JSONP 动态获取
   });
 
   test('TC-CFG-003: 配置面板可关闭', async ({ page }) => {
