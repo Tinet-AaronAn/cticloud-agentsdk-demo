@@ -109,8 +109,8 @@ test.describe('集成测试（真实环境）', () => {
     // 点击登录
     await page.getByRole('button', { name: /登录/ }).click();
     
-    // 等待 AGENT_STATUS 事件（延长超时到30秒）
-    const hasEvent = await waitForEvent(page, 'AGENT_STATUS', 30000);
+    // 等待 agentStatus 事件（延长超时到30秒）
+    const hasEvent = await waitForEvent(page, 'agentStatus', 30000);
     expect(hasEvent).toBe(true);
     
     // 验证状态变为空闲
@@ -127,7 +127,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-LOGIN-002: 登出成功', async ({ page }) => {
     // 先登录
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 30000);
+    await waitForEvent(page, 'agentStatus', 30000);
     
     // 点击登出
     await page.getByRole('button', { name: /登出/ }).click();
@@ -157,7 +157,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-CALL-001: 外呼流程', async ({ page }) => {
     // 登录
     await page.getByRole('button', { name: /登录/ }).click();
-    const loginSuccess = await waitForEvent(page, 'AGENT_STATUS', 30000);
+    const loginSuccess = await waitForEvent(page, 'agentStatus', 30000);
     expect(loginSuccess).toBe(true);
     
     // 等待状态稳定
@@ -197,7 +197,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-SOFTPHONE-002: 登录后空闲状态接听/挂断按钮禁用', async ({ page }) => {
     // 登录
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 30000);
+    await waitForEvent(page, 'agentStatus', 30000);
     
     // 空闲状态下，接听和挂断应该禁用（因为没有来电）
     await page.waitForTimeout(1000);
@@ -212,17 +212,17 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-EVENT-001: 事件过滤功能', async ({ page }) => {
     // 登录产生事件
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 30000);
+    await waitForEvent(page, 'agentStatus', 30000);
     
     // 使用事件过滤
     const filterSelect = page.locator('.card-header').filter({ hasText: '事件日志' }).locator('select');
-    await filterSelect.selectOption('AGENT_STATUS');
+    await filterSelect.selectOption('agentStatus');
     
-    // 验证只显示 AGENT_STATUS 事件
+    // 验证只显示 agentStatus 事件
     await page.waitForTimeout(500);
     const eventCodes = await page.locator('tbody code').allTextContents();
     eventCodes.forEach(code => {
-      expect(code).toContain('AGENT_STATUS');
+      expect(code).toContain('agentStatus');
     });
     
     console.log('✅ 事件过滤功能正常');
@@ -231,7 +231,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-EVENT-002: 事件清空功能', async ({ page }) => {
     // 登录产生事件
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 30000);
+    await waitForEvent(page, 'agentStatus', 30000);
     
     // 点击清空按钮
     await page.getByRole('button', { name: '' }).filter({ has: page.locator('.bi-trash') }).click();
@@ -271,7 +271,7 @@ test.describe('集成测试（真实环境）', () => {
     await autoTestBtn.click();
     
     // 等待登录事件（自测第一步）
-    const hasLoginEvent = await waitForEvent(page, 'AGENT_STATUS', 15000);
+    const hasLoginEvent = await waitForEvent(page, 'agentStatus', 15000);
     expect(hasLoginEvent).toBe(true);
     
     console.log('✅ 一键自测启动成功');
