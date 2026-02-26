@@ -21,131 +21,6 @@
     token: '0e7a1929ab9d2bd9eb958c8873933123'
   };
 
-  // MD5 实现（用于生成签名）
-  // 简化版 MD5，生产环境建议使用标准库
-  const hex_md5 = (function() {
-    function safeAdd(x, y) {
-      const lsw = (x & 0xFFFF) + (y & 0xFFFF);
-      const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-      return (msw << 16) | (lsw & 0xFFFF);
-    }
-    function bitRotateLeft(num, cnt) {
-      return (num << cnt) | (num >>> (32 - cnt));
-    }
-    function md5cmn(q, a, b, x, s, t) {
-      return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
-    }
-    function md5ff(a, b, c, d, x, s, t) {
-      return md5cmn((b & c) | ((~b) & d), a, b, x, s, t);
-    }
-    function md5gg(a, b, c, d, x, s, t) {
-      return md5cmn((b & d) | (c & (~d)), a, b, x, s, t);
-    }
-    function md5hh(a, b, c, d, x, s, t) {
-      return md5cmn(b ^ c ^ d, a, b, x, s, t);
-    }
-    function md5ii(a, b, c, d, x, s, t) {
-      return md5cmn(c ^ (b | (~d)), a, b, x, s, t);
-    }
-    function binlMD5(x, len) {
-      x[len >> 5] |= 0x80 << (len % 32);
-      x[(((len + 64) >>> 9) << 4) + 14] = len;
-      let a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
-      for (let i = 0; i < x.length; i += 16) {
-        const olda = a, oldb = b, oldc = c, oldd = d;
-        a = md5ff(a, b, c, d, x[i], 7, -680876936);
-        d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
-        c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
-        b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
-        a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
-        d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
-        c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
-        b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
-        a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
-        d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
-        c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
-        b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
-        a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
-        d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
-        c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
-        b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
-        a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
-        d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
-        c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
-        b = md5gg(b, c, d, a, x[i], 20, -377838114);
-        a = md5gg(a, b, c, d, x[i + 5], 5, -202609702);
-        d = md5gg(d, a, b, c, x[i + 10], 9, 1628644583);
-        c = md5gg(c, d, a, b, x[i + 15], 14, -880617204);
-        b = md5gg(b, c, d, a, x[i + 4], 20, -1044525330);
-        a = md5gg(a, b, c, d, x[i + 9], 5, -187363961);
-        d = md5gg(d, a, b, c, x[i + 14], 9, -1069501632);
-        c = md5gg(c, d, a, b, x[i + 3], 14, 1465026083);
-        b = md5gg(b, c, d, a, x[i + 8], 20, 191792500);
-        a = md5gg(a, b, c, d, x[i + 13], 5, -1473231341);
-        d = md5gg(d, a, b, c, x[i + 2], 9, -1958414417);
-        c = md5gg(c, d, a, b, x[i + 7], 14, -1990404162);
-        b = md5gg(b, c, d, a, x[i + 12], 20, 1804603682);
-        a = md5hh(a, b, c, d, x[i + 5], 4, -56133835);
-        d = md5hh(d, a, b, c, x[i + 8], 11, -187363961);
-        c = md5hh(c, d, a, b, x[i + 11], 16, 1838596466);
-        b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
-        a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
-        d = md5hh(d, a, b, c, x[i + 4], 11, 1272893359);
-        c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
-        b = md5hh(b, c, d, a, x[i + 10], 23, -1366207466);
-        a = md5hh(a, b, c, d, x[i + 13], 4, 1019807064);
-        d = md5hh(d, a, b, c, x[i + 0], 11, -389564586);
-        c = md5hh(c, d, a, b, x[i + 3], 16, -980514378);
-        b = md5hh(b, c, d, a, x[i + 6], 23, 606105819);
-        a = md5hh(a, b, c, d, x[i + 9], 4, -1473231341);
-        d = md5hh(d, a, b, c, x[i + 12], 11, 880617204);
-        c = md5hh(c, d, a, b, x[i + 15], 16, -880617204);
-        b = md5hh(b, c, d, a, x[i + 2], 23, 1465026083);
-        a = md5ii(a, b, c, d, x[i], 6, -198630844);
-        d = md5ii(d, a, b, c, x[i + 7], 10, 1958414417);
-        c = md5ii(c, d, a, b, x[i + 14], 15, -42063);
-        b = md5ii(b, c, d, a, x[i + 5], 21, -880617204);
-        a = md5ii(a, b, c, d, x[i + 12], 6, 880617204);
-        d = md5ii(d, a, b, c, x[i + 3], 10, -822470838);
-        c = md5ii(c, d, a, b, x[i + 10], 15, -1502002290);
-        b = md5ii(b, c, d, a, x[i + 1], 21, -40341101);
-        a = md5ii(a, b, c, d, x[i + 8], 6, 1236535329);
-        d = md5ii(d, a, b, c, x[i + 15], 10, -389564586);
-        c = md5ii(c, d, a, b, x[i + 6], 15, 643717713);
-        b = md5ii(b, c, d, a, x[i + 13], 21, -1958414417);
-        a = md5ii(a, b, c, d, x[i + 4], 6, 1804603682);
-        d = md5ii(d, a, b, c, x[i + 11], 10, -1473231341);
-        c = md5ii(c, d, a, b, x[i + 2], 15, 1770035416);
-        b = md5ii(b, c, d, a, x[i + 9], 21, -880617204);
-        a = safeAdd(a, olda);
-        b = safeAdd(b, oldb);
-        c = safeAdd(c, oldc);
-        d = safeAdd(d, oldd);
-      }
-      return [a, b, c, d];
-    }
-    function binl2hex(binarray) {
-      const hexTab = '0123456789abcdef';
-      let str = '';
-      for (let i = 0; i < binarray.length * 4; i++) {
-        str += hexTab.charAt((binarray[i >> 2] >> ((i % 4) * 8 + 4)) & 0xF) +
-               hexTab.charAt((binarray[i >> 2] >> ((i % 4) * 8)) & 0xF);
-      }
-      return str;
-    }
-    function str2binl(str) {
-      const bin = [];
-      const mask = (1 << 8) - 1;
-      for (let i = 0; i < str.length * 8; i += 8) {
-        bin[i >> 5] |= (str.charCodeAt(i / 8) & mask) << (i % 32);
-      }
-      return bin;
-    }
-    return function(s) {
-      return binl2hex(binlMD5(str2binl(s), s.length * 8));
-    };
-  })();
-
   // 敏感字段列表（不打印到日志）
   const SENSITIVE_KEYS = ['sessionKey', 'token', 'password', 'secret'];
 
@@ -171,9 +46,9 @@
   // JSONP 请求获取 sessionKey
   function fetchSessionKey() {
     return new Promise((resolve, reject) => {
-      // 检查 hex_md5 函数是否存在
-      if (typeof hex_md5 !== 'function') {
-        reject(new Error('hex_md5 函数未定义'));
+      // 检查 md5 函数是否存在
+      if (typeof window.md5 !== 'function') {
+        reject(new Error('md5 函数未定义，请确保 blueimp-md5 已加载'));
         return;
       }
       
@@ -184,7 +59,7 @@
       
       // 生成签名：MD5(enterpriseId + timestamp + token)
       const signSeed = `${enterpriseId}${timestamp}${token}`;
-      const sign = hex_md5(signSeed);
+      const sign = window.md5(signSeed);
       
       // 构建回调函数名
       const callbackName = `__jsonp_cb_${timestamp}_${Math.floor(Math.random() * 1000000)}`;
