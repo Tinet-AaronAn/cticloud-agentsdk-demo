@@ -10,6 +10,9 @@
 
 import { test, expect, Page } from '@playwright/test';
 
+// 延长测试超时时间（集成测试需要更长时间）
+test.setTimeout(180000); // 3分钟
+
 // 测试配置
 const TEST_CONFIG = {
   baseURL: 'https://agent-gateway-hs-dev.cticloud.cn',
@@ -106,8 +109,8 @@ test.describe('集成测试（真实环境）', () => {
     // 点击登录
     await page.getByRole('button', { name: /登录/ }).click();
     
-    // 等待 AGENT_STATUS 事件
-    const hasEvent = await waitForEvent(page, 'AGENT_STATUS', 10000);
+    // 等待 AGENT_STATUS 事件（延长超时到30秒）
+    const hasEvent = await waitForEvent(page, 'AGENT_STATUS', 30000);
     expect(hasEvent).toBe(true);
     
     // 验证状态变为空闲
@@ -124,7 +127,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-LOGIN-002: 登出成功', async ({ page }) => {
     // 先登录
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 10000);
+    await waitForEvent(page, 'AGENT_STATUS', 30000);
     
     // 点击登出
     await page.getByRole('button', { name: /登出/ }).click();
@@ -154,7 +157,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-CALL-001: 外呼流程', async ({ page }) => {
     // 登录
     await page.getByRole('button', { name: /登录/ }).click();
-    const loginSuccess = await waitForEvent(page, 'AGENT_STATUS', 10000);
+    const loginSuccess = await waitForEvent(page, 'AGENT_STATUS', 30000);
     expect(loginSuccess).toBe(true);
     
     // 等待状态稳定
@@ -194,7 +197,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-SOFTPHONE-002: 登录后空闲状态接听/挂断按钮禁用', async ({ page }) => {
     // 登录
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 10000);
+    await waitForEvent(page, 'AGENT_STATUS', 30000);
     
     // 空闲状态下，接听和挂断应该禁用（因为没有来电）
     await page.waitForTimeout(1000);
@@ -209,7 +212,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-EVENT-001: 事件过滤功能', async ({ page }) => {
     // 登录产生事件
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 10000);
+    await waitForEvent(page, 'AGENT_STATUS', 30000);
     
     // 使用事件过滤
     const filterSelect = page.locator('.card-header').filter({ hasText: '事件日志' }).locator('select');
@@ -228,7 +231,7 @@ test.describe('集成测试（真实环境）', () => {
   test('TC-INT-EVENT-002: 事件清空功能', async ({ page }) => {
     // 登录产生事件
     await page.getByRole('button', { name: /登录/ }).click();
-    await waitForEvent(page, 'AGENT_STATUS', 10000);
+    await waitForEvent(page, 'AGENT_STATUS', 30000);
     
     // 点击清空按钮
     await page.getByRole('button', { name: '' }).filter({ has: page.locator('.bi-trash') }).click();
