@@ -172,8 +172,8 @@ test.describe('集成测试（真实环境）', () => {
     await page.getByRole('button', { name: /登录/ }).click();
     await page.waitForTimeout(5000);
     
-    // 使用事件过滤（选择"坐席状态"）
-    const filterSelect = page.locator('select').filter({ has: page.locator('option') });
+    // 使用事件过滤（在事件日志卡片中）
+    const filterSelect = page.locator('.card-header').filter({ hasText: '事件日志' }).locator('select');
     await filterSelect.selectOption({ label: '坐席状态' });
     
     // 验证过滤生效
