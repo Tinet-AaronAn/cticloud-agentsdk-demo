@@ -95,7 +95,7 @@ test.describe('集成测试（真实环境）', () => {
     await page.waitForTimeout(500);
     
     // 关闭配置面板
-    await page.locator('.offcanvas-close').click();
+    await page.locator('.offcanvas-close').click({ force: true });
     await page.waitForTimeout(300);
   });
 
