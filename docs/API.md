@@ -166,6 +166,20 @@ ChannelVariable（信道变量）用于在一次呼叫的信令或上下文中�
 错误处理：
 - 统一检查 res.code；捕获异常并展示 err.code/err.message
 
+### setAgentStatus(params) → Promise<SdkResponse>
+- status：number — 坐席状态（1 = 空闲，2 = 忙碌）
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 置忙：setAgentStatus({ status: 2 }) — 仅空闲状态可用
+- 置闲：setAgentStatus({ status: 1 }) — 仅忙碌/整理状态可用
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
 ## 事件订阅示例（Demo）
 - const { EventType } = AgentSDK;
 - 订阅关键事件并打印：
