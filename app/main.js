@@ -469,13 +469,16 @@
       if (!this.canSetBusy) return;
       try {
         const AgentSDK = await getAgentSDK();
-        // 假设 SDK 提供 setAgentStatus 方法
-        if (AgentSDK.setAgentStatus) {
-          const res = await AgentSDK.setAgentStatus({ status: 2 }); // 2 = busy
+        // 使用正确的 pause 方法
+        const res = await AgentSDK.pause({ 
+          pauseType: 2,  // 2 = 非生产性忙碌
+          pauseDescription: 'BUSY' 
+        });
+        if (res.code === 0) {
           this.showToast('已置忙', 'warning');
           this.addEvent('SET_BUSY', res);
         } else {
-          this.showToast('SDK 不支持置忙操作', 'danger');
+          this.showToast(`置忙失败: ${res.message || res.errorCode}`, 'danger');
         }
       } catch (err) {
         this.showToast(`置忙异常: ${err.message}`, 'danger');
@@ -486,13 +489,13 @@
       if (!this.canSetIdle) return;
       try {
         const AgentSDK = await getAgentSDK();
-        // 假设 SDK 提供 setAgentStatus 方法
-        if (AgentSDK.setAgentStatus) {
-          const res = await AgentSDK.setAgentStatus({ status: 1 }); // 1 = idle
+        // 使用正确的 unpause 方法
+        const res = await AgentSDK.unpause();
+        if (res.code === 0) {
           this.showToast('已置闲', 'success');
           this.addEvent('SET_IDLE', res);
         } else {
-          this.showToast('SDK 不支持置闲操作', 'danger');
+          this.showToast(`置闲失败: ${res.message || res.errorCode}`, 'danger');
         }
       } catch (err) {
         this.showToast(`置闲异常: ${err.message}`, 'danger');
