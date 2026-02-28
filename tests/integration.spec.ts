@@ -78,8 +78,8 @@ test.describe('集成测试（真实环境）', () => {
     // 点击登录
     await page.getByRole('button', { name: /登录/ }).click();
     
-    // 等待登录完成（给足够时间）
-    await page.waitForTimeout(5000);
+    // 等待登录完成（增加到 10 秒，给 JSONP 获取 sessionKey + SDK 登录足够时间）
+    await page.waitForTimeout(10000);
     
     // 验证状态变化（可能是空闲、忙碌或其他）
     const status = await getStatusText(page);

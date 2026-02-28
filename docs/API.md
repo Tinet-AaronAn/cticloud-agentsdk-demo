@@ -166,16 +166,29 @@ ChannelVariable（信道变量）用于在一次呼叫的信令或上下文中�
 错误处理：
 - 统一检查 res.code；捕获异常并展示 err.code/err.message
 
-### setAgentStatus(params) → Promise<SdkResponse>
-- status：number — 坐席状态（1 = 空闲，2 = 忙碌）
+### pause(params) → Promise<SdkResponse>
+- pauseType：number — 忙碌类型（租户配置）。常见：0 生产性；2 非生产性
+- pauseDescription：string（可选）— 忙碌原因描述（默认 "busy"），必须存在于租户配置中
 
 返回（SdkResponse）：
 - 成功：{ code: 0, ... }
 - 失败：{ code: 非 0, errorCode, message }
 
 使用场景：
-- 置忙：setAgentStatus({ status: 2 }) — 仅空闲状态可用
-- 置闲：setAgentStatus({ status: 1 }) — 仅忙碌/整理状态可用
+- 置忙：pause({ pauseType: 2, pauseDescription: 'MEETING' })
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### unpause() → Promise<SdkResponse>
+- 无参数
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 置闲：unpause()
 
 错误处理：
 - catch(err) → 显示错误提示与日志（err.code/err.message）
