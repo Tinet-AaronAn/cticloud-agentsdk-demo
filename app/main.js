@@ -121,6 +121,8 @@
     autoTesting: false,
     toasts: [],
     webrtc: { jitter: '--', packetLoss: '--', rtt: '--' },
+    isOnHold: false,
+    isMuted: false,
     theme: 'light',
     configOpen: false,
 
@@ -155,6 +157,26 @@
     },
     get canSetIdle() {
       return this.loggedIn && (this.agentState === 'busy' || this.agentState === 'wrapup');
+    },
+    get canHold() {
+      // 在通话中且未保持状态可以保持
+      return this.loggedIn && this.deviceStatus === 4 && !this.isOnHold;
+    },
+    get canUnhold() {
+      // 在保持状态下可以恢复
+      return this.loggedIn && this.isOnHold;
+    },
+    get canMute() {
+      // 在通话中且未静音状态可以静音
+      return this.loggedIn && this.deviceStatus === 4 && !this.isMuted;
+    },
+    get canUnmute() {
+      // 在静音状态下可以取消静音
+      return this.loggedIn && this.isMuted;
+    },
+    get canSendDtmf() {
+      // 在通话中可以发送 DTMF
+      return this.loggedIn && this.deviceStatus === 4;
     },
     get filteredEvents() {
       if (!this.eventFilter) return this.events;
@@ -460,8 +482,98 @@
         const AgentSDK = await getAgentSDK();
         await AgentSDK.sipUnlink();
         this.showToast('已挂断', 'info');
+        // 重置保持和静音状态
+        this.isOnHold = false;
+        this.isMuted = false;
       } catch (err) {
         this.showToast(`挂断异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async hold() {
+      if (!this.canHold) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.hold();
+        if (res.code === 0) {
+          this.isOnHold = true;
+          this.showToast('已保持', 'warning');
+          this.addEvent('HOLD', res);
+        } else {
+          this.showToast(`保持失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`保持异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async unhold() {
+      if (!this.canUnhold) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.unhold();
+        if (res.code === 0) {
+          this.isOnHold = false;
+          this.showToast('已恢复', 'success');
+          this.addEvent('UNHOLD', res);
+        } else {
+          this.showToast(`恢复失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`恢复异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async mute() {
+      if (!this.canMute) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.mute({ direction: 'sendrecv' });
+        if (res.code === 0) {
+          this.isMuted = true;
+          this.showToast('已静音', 'warning');
+          this.addEvent('MUTE', res);
+        } else {
+          this.showToast(`静音失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`静音异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async unmute() {
+      if (!this.canUnmute) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.unmute({ direction: 'sendrecv' });
+        if (res.code === 0) {
+          this.isMuted = false;
+          this.showToast('已取消静音', 'success');
+          this.addEvent('UNMUTE', res);
+        } else {
+          this.showToast(`取消静音失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`取消静音异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async sendDtmf() {
+      if (!this.canSendDtmf) return;
+      try {
+        const digits = prompt('请输入要发送的 DTMF 数字:');
+        if (!digits) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.sendDtmf({ digits });
+        if (res.code === 0) {
+          this.showToast(`DTMF 已发送: ${digits}`, 'success');
+          this.addEvent('SEND_DTMF', { digits, ...res });
+        } else {
+          this.showToast(`发送失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`发送异常: ${err.message}`, 'danger');
       }
     },
 

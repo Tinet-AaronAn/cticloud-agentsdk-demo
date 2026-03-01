@@ -193,6 +193,92 @@ ChannelVariable（信道变量）用于在一次呼叫的信令或上下文中�
 错误处理：
 - catch(err) → 显示错误提示与日志（err.code/err.message）
 
+### hold() → Promise<SdkResponse>
+- 无参数；在通话中将当前通话保持
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 通话保持：hold()
+
+前提条件：
+- 已登录且处于通话中（deviceStatus === 4）
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### unhold() → Promise<SdkResponse>
+- 无参数；恢复被保持的通话
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 恢复通话：unhold()
+
+前提条件：
+- 已登录且通话处于保持状态
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### mute(params) → Promise<SdkResponse>
+- direction：string — 静音方向
+  - 'sendrecv'：双向静音（同时静音收发）
+  - 'send'：仅静音发送（对方听不到）
+  - 'recv'：仅静音接收（自己听不到）
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 静音：mute({ direction: 'sendrecv' })
+
+前提条件：
+- 已登录且处于通话中（deviceStatus === 4）
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### unmute(params) → Promise<SdkResponse>
+- direction：string — 取消静音方向
+  - 'sendrecv'：取消双向静音
+  - 'send'：取消发送静音
+  - 'recv'：取消接收静音
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 取消静音：unmute({ direction: 'sendrecv' })
+
+前提条件：
+- 已登录且通话处于静音状态
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### sendDtmf(params) → Promise<SdkResponse>
+- digits：string — 要发送的 DTMF 数字/字符（0-9, *, #）
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 发送 DTMF：sendDtmf({ digits: '1234' })
+
+前提条件：
+- 已登录且处于通话中（deviceStatus === 4）
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
 ## 事件订阅示例（Demo）
 - const { EventType } = AgentSDK;
 - 订阅关键事件并打印：

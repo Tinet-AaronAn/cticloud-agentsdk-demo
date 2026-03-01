@@ -766,7 +766,7 @@
             </div>
             <div>
               <div class="card-title">软电话控制</div>
-              <div class="card-subtitle">接听 / 挂断 / 保持</div>
+              <div class="card-subtitle">接听 / 挂断 / 保持 / 静音</div>
             </div>
           </div>
           <div class="card-body">
@@ -776,6 +776,27 @@
               </button>
               <button class="btn btn-warning" :disabled="!canHangup" @click="sipUnlink">
                 <i class="bi bi-telephone-x"></i> 挂断
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top: 8px;">
+              <button class="btn btn-secondary" :disabled="!canHold" @click="hold">
+                <i class="bi bi-pause-circle"></i> 保持
+              </button>
+              <button class="btn btn-success" :disabled="!canUnhold" @click="unhold">
+                <i class="bi bi-play-circle"></i> 恢复
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top: 8px;">
+              <button class="btn btn-secondary" :disabled="!canMute" @click="mute">
+                <i class="bi bi-mic-mute"></i> 静音
+              </button>
+              <button class="btn btn-success" :disabled="!canUnmute" @click="unmute">
+                <i class="bi bi-mic"></i> 取消静音
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top: 8px;">
+              <button class="btn btn-info" :disabled="!canSendDtmf" @click="sendDtmf">
+                <i class="bi bi-123"></i> 发送DTMF
               </button>
             </div>
           </div>
