@@ -1274,6 +1274,14 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     },
 
+    // 测试辅助方法：用于集成测试中正确更新响应式状态
+    // 注意：这个方法会触发 PetiteVue 的响应式更新
+    setTestState(newState) {
+      Object.keys(newState).forEach(key => {
+        this[key] = newState[key];
+      });
+    },
+
     // 初始化
     async init() {
       // 加载保存的配置
@@ -1288,14 +1296,18 @@
   };
 
   // 启动应用
-  const app = PetiteVue.createApp(App);
+  // 注意：PetiteVue.createApp 返回的是应用实例，不是响应式对象
+  // 需要使用 PetiteVue.reactive 来创建响应式对象
+  const reactiveApp = PetiteVue.reactive(App);
+  
+  // 创建应用实例并挂载
+  const app = PetiteVue.createApp(reactiveApp);
   app.mount('#app');
   
-  // 注意：app 是 PetiteVue 创建的反应式代理对象
-  // 需要使用 app 而不是原始的 App 对象来确保响应式正常工作
-  window.App = app;
+  // 暴露响应式对象到全局作用域（用于测试）
+  window.App = reactiveApp;
   
   // 初始化
-  app.init();
+  reactiveApp.init();
 
 })();
