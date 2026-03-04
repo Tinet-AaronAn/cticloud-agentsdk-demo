@@ -124,6 +124,13 @@
     isOnHold: false,
     isMuted: false,
     isConsulting: false,
+    // 班组长操作状态
+    isSpying: false,        // 监听中
+    isWhispering: false,    // 耳语中
+    isBarging: false,       // 强插中
+    spyTarget: null,        // 监听目标
+    whisperTarget: null,    // 耳语目标
+    bargeTarget: null,      // 强插目标
     theme: 'light',
     configOpen: false,
 
@@ -200,24 +207,45 @@
       // 通话中可以盲转
       return this.loggedIn && this.deviceStatus === 4;
     },
-    // 班组长操作
+    // 置忙置闲（班组长操作）
     get canSetPause() {
       return this.loggedIn && this.agentState === 'idle';
     },
     get canSetUnpause() {
       return this.loggedIn && (this.agentState === 'busy' || this.agentState === 'wrapup');
     },
+    // 班组长操作 - 状态控制
+    // 监听：已登录 + 不在自己通话中
     get canSpy() {
-      return this.loggedIn && this.deviceStatus === 4;
+      return this.loggedIn && this.deviceStatus !== 3 && !this.isSpying;
     },
+    // 耳语：已登录 + 正在监听中（监听后可升级为耳语）
     get canWhisper() {
-      return this.loggedIn && this.deviceStatus === 4;
+      return this.loggedIn && this.isSpying && !this.isWhispering && !this.isBarging;
     },
+    // 强插：已登录 + 正在监听中（监听后可升级为强插）
     get canBarge() {
-      return this.loggedIn && this.deviceStatus === 4;
+      return this.loggedIn && this.isSpying && !this.isWhispering && !this.isBarging;
     },
+    // 强拆：已登录即可（不需要在监听中）
     get canDisconnect() {
-      return this.loggedIn && this.deviceStatus === 4;
+      return this.loggedIn;
+    },
+    // 取消监听：正在监听中
+    get canUnspy() {
+      return this.isSpying && !this.isWhispering && !this.isBarging;
+    },
+    // 取消耳语： 正在耳语中
+    get canUnwhisper() {
+      return this.isWhispering;
+    },
+    // 取消强插： 正在强插中
+    get canCancelBarge() {
+      return this.isBarging;
+    },
+    // 取消三方（班组长）： 正在三方中
+    get canCancelThreeway() {
+      return this.loggedIn && this.isSpying;  // 简化判断，监听中即可取消
     },
     get filteredEvents() {
       if (!this.eventFilter) return this.events;
@@ -579,10 +607,48 @@
         AgentSDK.on(et, (e) => {
           const type = et.toString();
           this.addEvent(type.replace('EventType.', ''), e);
+          
           // 更新坐席状态
           if (e.eventType === 'agentStatus') {
             this.agentState = e.status?.state || 'unknown';
             this.deviceStatus = e.status?.deviceStatus || 0;
+          }
+          
+          // 班组长操作状态跟踪
+          if (e.eventType === 'spyLink') {
+            this.isSpying = true;
+            this.spyTarget = e.spiedCno;
+          }
+          if (e.eventType === 'spyUnlink') {
+            this.isSpying = false;
+            this.spyTarget = null;
+            this.isWhispering = false;
+            this.whisperTarget = null;
+            this.isBarging = false;
+            this.bargeTarget = null;
+          }
+          if (e.eventType === 'whisperLink') {
+            this.isWhispering = true;
+            this.whisperTarget = e.whisperedCno;
+          }
+          if (e.eventType === 'whisperUnlink') {
+            this.isWhispering = false;
+            this.whisperTarget = null;
+          }
+          if (e.eventType === 'bargeLink') {
+            this.isBarging = true;
+            this.bargeTarget = e.bargedAgentNo;
+          }
+          if (e.eventType === 'bargeUnlink') {
+            this.isBarging = false;
+            this.bargeTarget = null;
+          }
+          // 班组长三方通话
+          if (e.eventType === 'threewayLink') {
+            this.isSpying = true;  // 三方通话也是监听的一种
+          }
+          if (e.eventType === 'threewayUnlink') {
+            this.isSpying = false;
           }
         });
       });
@@ -927,10 +993,12 @@
         if (!agent) return;
         
         const AgentSDK = await getAgentSDK();
-        const res = await AgentSDK.spy({ agent });
+        const res = await AgentSDK.spy({ agentNo: agent });
         if (res.code === 0) {
+          this.isSpying = true;
+          this.spyTarget = agent;
           this.showToast('监听已启动', 'success');
-          this.addEvent('SPY', { agent, ...res });
+          this.addEvent('SPY_RESULT', { agent, ...res });
         } else {
           this.showToast(`监听失败: ${res.message || res.errorCode}`, 'danger');
         }
@@ -939,17 +1007,41 @@
       }
     },
 
+    async unspy() {
+      if (!this.canUnspy) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.unspy();
+        if (res.code === 0) {
+          this.isSpying = false;
+          this.spyTarget = null;
+          this.isWhispering = false;
+          this.whisperTarget = null;
+          this.isBarging = false;
+          this.bargeTarget = null;
+          this.showToast('监听已取消', 'success');
+          this.addEvent('SPY_UNLINK', res);
+        } else {
+          this.showToast(`取消监听失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`取消监听异常: ${err.message}`, 'danger');
+      }
+    },
+
     async whisper() {
       if (!this.canWhisper) return;
       try {
-        const agent = prompt('请输入目标坐席号:');
+        const agent = this.spyTarget || prompt('请输入目标坐席号:');
         if (!agent) return;
         
         const AgentSDK = await getAgentSDK();
-        const res = await AgentSDK.whisper({ agent });
+        const res = await AgentSDK.whisper({ agentNo: agent });
         if (res.code === 0) {
+          this.isWhispering = true;
+          this.whisperTarget = agent;
           this.showToast('耳语已启动', 'success');
-          this.addEvent('WHISPER', { agent, ...res });
+          this.addEvent('WHISPER_RESULT', { agent, ...res });
         } else {
           this.showToast(`耳语失败: ${res.message || res.errorCode}`, 'danger');
         }
@@ -958,22 +1050,64 @@
       }
     },
 
+    async unWhisper() {
+      if (!this.canUnwhisper) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.unWhisper();
+        if (res.code === 0) {
+          this.isWhispering = false;
+          this.whisperTarget = null;
+          // 退回到监听状态
+          this.showToast('耳语已取消，回到监听状态', 'success');
+          this.addEvent('WHISPER_UNLINK', res);
+        } else {
+          this.showToast(`取消耳语失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`取消耳语异常: ${err.message}`, 'danger');
+      }
+    },
+
     async barge() {
       if (!this.canBarge) return;
       try {
-        const agent = prompt('请输入目标坐席号:');
+        const agent = this.spyTarget || prompt('请输入目标坐席号:');
         if (!agent) return;
         
         const AgentSDK = await getAgentSDK();
-        const res = await AgentSDK.barge({ agent });
+        const res = await AgentSDK.barge({ agentNo: agent });
         if (res.code === 0) {
+          this.isBarging = true;
+          this.bargeTarget = agent;
           this.showToast('强插已启动', 'success');
-          this.addEvent('BARGE', { agent, ...res });
+          this.addEvent('BARGE_RESULT', { agent, ...res });
         } else {
           this.showToast(`强插失败: ${res.message || res.errorCode}`, 'danger');
         }
       } catch (err) {
         this.showToast(`强插异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async cancelBarge() {
+      if (!this.canCancelBarge) return;
+      try {
+        // 强插没有专门的取消方法，通常通过挂断来取消
+        const AgentSDK = await getAgentSDK();
+        // 使用 sipUnlink 或 unlink 来结束强插
+        const res = await AgentSDK.sipUnlink ? await AgentSDK.sipUnlink() : await AgentSDK.unlink({ side: 1 });
+        if (res.code === 0) {
+          this.isBarging = false;
+          this.bargeTarget = null;
+          // 可能回到监听状态或完全退出
+          this.showToast('强插已取消', 'success');
+          this.addEvent('BARGE_UNLINK', res);
+        } else {
+          this.showToast(`取消强插失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`取消强插异常: ${err.message}`, 'danger');
       }
     },
 
@@ -984,15 +1118,59 @@
         if (!agent) return;
         
         const AgentSDK = await getAgentSDK();
-        const res = await AgentSDK.disconnect({ agent });
+        const res = await AgentSDK.disconnect({ agentNo: agent });
         if (res.code === 0) {
           this.showToast('强拆已执行', 'success');
-          this.addEvent('DISCONNECT', { agent, ...res });
+          this.addEvent('DISCONNECT_RESULT', { agent, ...res });
         } else {
           this.showToast(`强拆失败: ${res.message || res.errorCode}`, 'danger');
         }
       } catch (err) {
         this.showToast(`强拆异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async setOnline() {
+      if (!this.loggedIn) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const endpoint = prompt('请输入绑定终端（手机号或分机号）:');
+        if (!endpoint) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.setOnline({
+          agentNo: agent,
+          bindEndpoint: { endpointType: 1, endpoint }
+        });
+        if (res.code === 0) {
+          this.showToast(`坐席 ${agent} 已强制上线`, 'success');
+          this.addEvent('SET_ONLINE', { agent, ...res });
+        } else {
+          this.showToast(`强制上线失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`强制上线异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async setOffline() {
+      if (!this.loggedIn) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.setOffline({ agentNo: agent, unbindEndpoint: 0 });
+        if (res.code === 0) {
+          this.showToast(`坐席 ${agent} 已强制下线`, 'success');
+          this.addEvent('SET_OFFLINE', { agent, ...res });
+        } else {
+          this.showToast(`强制下线失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`强制下线异常: ${err.message}`, 'danger');
       }
     },
 
@@ -1110,7 +1288,14 @@
   };
 
   // 启动应用
-  PetiteVue.createApp(App).mount('#app');
-  App.init();
+  const app = PetiteVue.createApp(App);
+  app.mount('#app');
+  
+  // 注意：app 是 PetiteVue 创建的反应式代理对象
+  // 需要使用 app 而不是原始的 App 对象来确保响应式正常工作
+  window.App = app;
+  
+  // 初始化
+  app.init();
 
 })();
