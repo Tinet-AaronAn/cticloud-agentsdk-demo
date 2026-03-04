@@ -322,3 +322,103 @@ ChannelVariable（信道变量）用于在一次呼叫的信令或上下文中�
 ## 备注
 - ChannelVariable 的具体支持字段与位置（方法参数名）以实际 SDK 文档为准；本文件给出常见示例与推荐做法。
 - bindEndpoint 的类型枚举与含义以 SDK/环境定义为准；Demo 中仅使用 3（WebRTC 软电话）。
+
+### setPause(params) → Promise<SdkResponse>
+- agent：string — 目标坐席号
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 班组长置忙坐席：setPause({ agent: '8001' })
+
+前提条件：
+- 已登录且有班组长权限
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### setUnpause(params) → Promise<SdkResponse>
+- agent：string — 目标坐席号
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 班组长置闲坐席：setUnpause({ agent: '8001' })
+
+前提条件：
+- 已登录且有班组长权限
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### spy(params) → Promise<SdkResponse>
+- agent：string — 目标坐席号
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 班组长监听坐席通话：spy({ agent: '8001' })
+
+前提条件：
+- 已登录且有班组长权限
+- 目标坐席处于通话中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### whisper(params) → Promise<SdkResponse>
+- agent：string — 目标坐席号
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 班组长耳语指导坐席：whisper({ agent: '8001' })
+
+前提条件：
+- 已登录且有班组长权限
+- 目标坐席处于通话中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### barge(params) → Promise<SdkResponse>
+- agent：string — 目标坐席号
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 班组长强插通话：barge({ agent: '8001' })
+
+前提条件：
+- 已登录且有班组长权限
+- 目标坐席处于通话中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### disconnect(params) → Promise<SdkResponse>
+- agent：string — 目标坐席号
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 班组长强拆通话：disconnect({ agent: '8001' })
+
+前提条件：
+- 已登录且有班组长权限
+- 目标坐席处于通话中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）

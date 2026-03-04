@@ -332,6 +332,48 @@ test.describe('集成测试（真实环境）', () => {
     console.log('✅ 空闲状态转接按钮禁用');
   });
 
+  // ==================== 班组长操作测试 ====================
+
+  test('TC-INT-SUPERVISOR-001: 未登录时班组长按钮禁用', async ({ page }) => {
+    // 等待页面加载完成
+    await page.waitForLoadState('networkidle');
+    
+    // 通过班组长操作卡片定位按钮
+    const supervisorCard = page.locator('.card').filter({ hasText: '班组长操作' });
+    
+    // 所有班组长按钮都应该禁用
+    await expect(supervisorCard.getByRole('button', { name: '置忙' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '置闲' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '监听' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '耳语' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '强插' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '强拆' })).toBeDisabled();
+    
+    console.log('✅ 未登录时班组长按钮禁用');
+  });
+
+  test('TC-INT-SUPERVISOR-002: 空闲状态班组长按钮禁用', async ({ page }) => {
+    // 登录
+    await page.getByRole('button', { name: /登录/ }).click();
+    await waitForEvent(page, 'agentStatus', 30000);
+    
+    // 等待状态稳定
+    await page.waitForTimeout(1000);
+    
+    // 通过班组长操作卡片定位按钮
+    const supervisorCard = page.locator('.card').filter({ hasText: '班组长操作' });
+    
+    // 空闲状态下，置忙按钮应该可用，其他按钮应该禁用
+    await expect(supervisorCard.getByRole('button', { name: '置忙' })).toBeEnabled();
+    await expect(supervisorCard.getByRole('button', { name: '置闲' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '监听' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '耳语' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '强插' })).toBeDisabled();
+    await expect(supervisorCard.getByRole('button', { name: '强拆' })).toBeDisabled();
+    
+    console.log('✅ 空闲状态班组长按钮状态正确');
+  });
+
 });
 
 // ==================== 测试工具函数 ====================
