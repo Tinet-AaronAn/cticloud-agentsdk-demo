@@ -195,9 +195,101 @@ ChannelVariable（信道变量）用于在一次呼叫的信令或上下文中�
 
 ## 事件订阅示例（Demo）
 - const { EventType } = AgentSDK;
-- 订阅关键事件并打印：
-  - AGENT_STATUS
-  - PREVIEW_OBCALL_START / RINGING / BRIDGE / RESULT
+- 订阅所有事件并打印：
+
+### 完整事件列表（40个）
+
+#### 坐席状态与会话（7个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `AGENT_STATUS` | agentStatus | 坐席状态变化 |
+| `SESSION_INIT` | sessionInit | 会话初始化 |
+| `SESSION_TERMINATE` | sessionTerminate | 会话终止 |
+| `SIP_SESSION_INIT` | sipSessionInit | SIP会话初始化 |
+| `SIP_SESSION_TERMINATE` | sipSessionTerminate | SIP会话终止 |
+| `SIP_DISCONNECTED` | sipDisconnected | 软电话断开 |
+| `RECONNECT_ATTEMPT` | reconnectAttempt | 重连尝试 |
+
+#### 预览外呼（4个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `PREVIEW_OBCALL_START` | previewObCallStart | 预览外呼-开始拨打 |
+| `PREVIEW_OBCALL_RINGING` | previewObCallRinging | 预览外呼-振铃 |
+| `PREVIEW_OBCALL_BRIDGE` | previewObCallBridge | 预览外呼-接通 |
+| `PREVIEW_OBCALL_RESULT` | previewObCallResult | 预览外呼-结果 |
+
+#### 来电振铃（1个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `RINGING` | ringing | 来电振铃 |
+
+#### 咨询转接（7个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `ATXFER_START` | atxferStart | 咨询开始 |
+| `ATXFER_LINK` | atxferLink | 咨询接通 |
+| `ATXFER_ENDED` | atxferEnded | 咨询结束 |
+| `ATXFER_ERROR` | atxferError | 咨询失败 |
+| `THREEWAY_ATXFER_RESULT` | threewayAtxferResult | 咨询三方结果 |
+| `ATXFER_THREEWAY_UNLINK` | atxferThreewayUnlink | 咨询三方结束 |
+| `COMPLETE_ATXFER_RESULT` | completeAtxferResult | 转接完成 |
+
+#### 班组长操作 - 监听（3个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `SPY_RESULT` | spyResult | 监听结果 |
+| `SPY_LINK` | spyLink | 监听接通 |
+| `SPY_UNLINK` | spyUnlink | 监听结束 |
+
+#### 班组长操作 - 三方（3个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `THREEWAY_RESULT` | threewayResult | 三方结果 |
+| `THREEWAY_LINK` | threewayLink | 三方接通 |
+| `THREEWAY_UNLINK` | threewayUnlink | 三方结束 |
+
+#### 班组长操作 - 耳语（3个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `WHISPER_RESULT` | whisperResult | 耳语结果 |
+| `WHISPER_LINK` | whisperLink | 耳语接通 |
+| `WHISPER_UNLINK` | whisperUnlink | 耳语结束 |
+
+#### 班组长操作 - 强插（3个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `BARGE_RESULT` | bargeResult | 强插结果 |
+| `BARGE_LINK` | bargeLink | 强插接通 |
+| `BARGE_UNLINK` | bargeUnlink | 强插结束 |
+
+#### 班组长操作 - 强拆/强下（2个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `DISCONNECT_RESULT` | disconnectResult | 强制断开结果 |
+| `SET_OFFLINE` | setOfflineResult | 强制下线结果 |
+
+#### 队列与分机状态（2个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `QUEUE_STATUS` | queueStatus | 队列状态（班长） |
+| `EXTENSTATE` | extenState | 分机状态 |
+
+#### IVR 交互（1个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `INTERACT_RETURN` | interactReturn | IVR交互返回 |
+
+#### 转写与回调（2个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `TRANSCRIPT` | transcript | 实时转写 |
+| `ORDER_CALLBACK` | orderCallBack | 预约回调 |
+
+#### 网络与质量（2个）
+| EventType 常量 | eventType | 说明 |
+|----------------|-----------|------|
+| `PING` | ping | Ping延迟/网络 |
+| `WEBRTC_STATS` | webrtcStats | WebRTC统计（通话中每秒） |
   - RINGING（来电/振铃）
   - RECONNECT_ATTEMPT（断线重连）
   - TRANSCRIPT（语音转写，若支持）
