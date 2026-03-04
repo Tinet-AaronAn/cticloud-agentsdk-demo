@@ -279,27 +279,120 @@
       const upperType = type.toUpperCase().replace(/-/g, '_');
       
       switch (upperType) {
+        // ========== 坐席状态与会话 ==========
         case 'AGENT_STATUS':
           return `状态: ${data.status?.state || 'unknown'} | 设备: ${this.getDeviceStatusText(data.status?.deviceStatus)}`;
-        case 'PREVIEW_OBCALL_START':
-          return `开始拨打 ${data.customerNumber || ''} | 坐席: ${data.agentNumber || ''}`;
-        case 'PREVIEW_OBCALL_RINGING':
-          return `振铃中 | ${data.ringingSide === 'agent' ? '坐席侧' : '客户侧'}`;
-        case 'PREVIEW_OBCALL_BRIDGE':
-          return `已接通 | 通话ID: ${(data.callId || '').substring(0, 12)}...`;
-        case 'PREVIEW_OBCALL_RESULT':
-          return `结果: ${data.result || data.reason || ''} | 挂断方: ${data.hangupSide || ''}`;
-        case 'RINGING':
-          return `来电振铃 | ${data.callerNumber || ''}`;
+        case 'SESSION_INIT':
+          return `会话初始化 | 坐席: ${data.agentNo || ''}`;
+        case 'SESSION_TERMINATE':
+          return `会话终止 | 坐席: ${data.agentNo || ''}`;
+        case 'SIP_SESSION_INIT':
+          return `SIP会话初始化 | 坐席: ${data.agentNo || ''}`;
+        case 'SIP_SESSION_TERMINATE':
+          return `SIP会话终止 | 坐席: ${data.agentNo || ''}`;
+        case 'SIP_DISCONNECTED':
+          return `软电话断开 | 坐席: ${data.agentNo || ''}`;
         case 'RECONNECT_ATTEMPT':
-          return `重连尝试 #${data.attempt || 1} | ${data.reason || ''}`;
+          return `重连尝试 #${data.attempt || 1}/${data.maxAttempts || 20} | 状态码: ${data.code || ''}`;
+          
+        // ========== 预览外呼 ==========
+        case 'PREVIEW_OBCALL_START':
+          return `开始拨打 ${data.customerNumber || ''} | 主叫: ${data.obClid || ''}`;
+        case 'PREVIEW_OBCALL_RINGING':
+          return `振铃中 | 状态: ${data.state || ''} | 客户: ${data.customerNumber || ''}`;
+        case 'PREVIEW_OBCALL_BRIDGE':
+          return `已接通 | 通道: ${(data.channel || '').substring(0, 15)}...`;
+        case 'PREVIEW_OBCALL_RESULT':
+          return `结果: ${data.result || ''} | 通话ID: ${(data.uniqueId || '').substring(0, 12)}...`;
+          
+        // ========== 来电振铃 ==========
+        case 'RINGING':
+          const callTypeMap = {1: '呼入', 2: 'WebCall', 4: '预览外呼', 5: '预测外呼', 6: '外呼', 9: '内部呼叫', 11: 'SIP接入'};
+          return `来电振铃 | ${callTypeMap[data.callType] || '未知'} | ${data.customerNumber || ''}`;
+          
+        // ========== 咨询转接 ==========
+        case 'ATXFER_START':
+          return `咨询开始 | 目标: ${data.target || ''}`;
+        case 'ATXFER_LINK':
+          return `咨询接通 | 目标: ${data.target || ''}`;
+        case 'ATXFER_ENDED':
+          return `咨询结束 | 目标: ${data.target || ''} | 挂断方: ${data.hangupSide || ''}`;
+        case 'ATXFER_ERROR':
+          return `咨询失败 | 状态: ${data.state || ''}`;
+        case 'THREEWAY_ATXFER_RESULT':
+          return `咨询三方结果 | 目标: ${data.target || ''}`;
+        case 'ATXFER_THREEWAY_UNLINK':
+          return `咨询三方结束 | 目标: ${data.target || ''}`;
+        case 'COMPLETE_ATXFER_RESULT':
+          return `转接完成 | 目标: ${data.target || ''}`;
+          
+        // ========== 班组长操作 - 监听 ==========
+        case 'SPY_RESULT':
+          return `监听结果 | 目标: ${data.spiedCno || ''} | ${data.result || ''}`;
+        case 'SPY_LINK':
+          return `监听接通 | 目标: ${data.spiedCno || ''}`;
+        case 'SPY_UNLINK':
+          return `监听结束 | 目标: ${data.spiedCno || ''}`;
+          
+        // ========== 班组长操作 - 三方 ==========
+        case 'THREEWAY_RESULT':
+          return `三方结果 | 目标: ${data.threewayedCno || ''} | ${data.result || ''}`;
+        case 'THREEWAY_LINK':
+          return `三方接通 | 目标: ${data.threewayedCno || ''}`;
+        case 'THREEWAY_UNLINK':
+          return `三方结束 | 目标: ${data.threewayedAgentNo || ''}`;
+          
+        // ========== 班组长操作 - 耳语 ==========
+        case 'WHISPER_RESULT':
+          return `耳语结果 | 目标: ${data.whisperedCno || ''} | ${data.result || ''}`;
+        case 'WHISPER_LINK':
+          return `耳语接通 | 目标: ${data.whisperedCno || ''}`;
+        case 'WHISPER_UNLINK':
+          return `耳语结束 | 目标: ${data.whisperedAgentNo || ''}`;
+          
+        // ========== 班组长操作 - 强插 ==========
+        case 'BARGE_RESULT':
+          return `强插结果 | 目标: ${data.bargedAgentNo || ''} | ${data.result || ''}`;
+        case 'BARGE_LINK':
+          return `强插接通 | 目标: ${data.bargedAgentNo || ''}`;
+        case 'BARGE_UNLINK':
+          return `强插结束 | 目标: ${data.bargedCno || ''}`;
+          
+        // ========== 班组长操作 - 强拆/强下 ==========
+        case 'DISCONNECT_RESULT':
+          return `强拆结果 | 目标: ${data.disconnectorCno || ''} | ${data.result || ''}`;
+        case 'SET_OFFLINE':
+          return `强制下线 | 操作者: ${data.initiator || ''} | ${data.message || ''}`;
+          
+        // ========== 队列与分机状态 ==========
+        case 'QUEUE_STATUS':
+          const queueCount = data.queueStatus ? Object.keys(data.queueStatus).length : 0;
+          return `队列状态 | ${queueCount} 个队列`;
+        case 'EXTENSTATE':
+          return `分机状态 | ${data.extenNo || ''} | ${data.state || ''} | 注册: ${data.registerState || ''}`;
+          
+        // ========== IVR 交互 ==========
+        case 'INTERACT_RETURN':
+          const varCount = data.returnVariables ? Object.keys(data.returnVariables).length : 0;
+          return `IVR交互返回 | ${varCount} 个变量`;
+          
+        // ========== 转写与回调 ==========
         case 'TRANSCRIPT':
           const text = data.text || '';
-          return `转写: ${text.substring(0, 25)}${text.length > 25 ? '...' : ''}`;
+          const roleText = data.role === 1 ? '坐席' : (data.role === 2 ? '客户' : '未知');
+          return `转写[${roleText}]: ${text.substring(0, 20)}${text.length > 20 ? '...' : ''}`;
+        case 'ORDER_CALLBACK':
+          return `预约回调事件`;
+          
+        // ========== 网络与质量 ==========
+        case 'PING':
+          return `Ping | 延迟: ${data.latencyTime || '--'}ms | 网络状态: ${data.networkState || '--'}`;
         case 'WEBRTC_STATS':
         case 'WEBRTCSTATS':
           this.updateWebrtc(data);
           return `WebRTC | 抖动:${data.jitter?.toFixed(1) || '--'}ms 丢包:${data.packetLossRate ? (data.packetLossRate * 100).toFixed(1) : '--'}%`;
+          
+        // ========== 内部事件 ==========
         case 'LOGIN_OK':
           return `登录成功 | 坐席: ${this.config.agentNo}`;
         case 'LOGIN_ERROR':
@@ -308,6 +401,9 @@
           return `登录异常 | ${data.message || ''}`;
         case 'LOGOUT':
           return `登出成功 | ${data.message || ''}`;
+        case 'AUTH_SUCCESS':
+          return `认证成功`;
+          
         default:
           return type;
       }
@@ -410,16 +506,72 @@
       const AgentSDK = await getAgentSDK();
       const { EventType } = AgentSDK;
 
-      // 订阅事件
+      // 订阅所有事件（40个）
       const eventTypes = [
+        // 坐席状态与会话
         EventType.AGENT_STATUS,
+        EventType.SESSION_INIT,
+        EventType.SESSION_TERMINATE,
+        EventType.SIP_SESSION_INIT,
+        EventType.SIP_SESSION_TERMINATE,
+        EventType.SIP_DISCONNECTED,
+        EventType.RECONNECT_ATTEMPT,
+        
+        // 预览外呼
         EventType.PREVIEW_OBCALL_START,
         EventType.PREVIEW_OBCALL_RINGING,
         EventType.PREVIEW_OBCALL_BRIDGE,
         EventType.PREVIEW_OBCALL_RESULT,
+        
+        // 来电振铃
         EventType.RINGING,
-        EventType.RECONNECT_ATTEMPT,
+        
+        // 咨询转接
+        EventType.ATXFER_START,
+        EventType.ATXFER_LINK,
+        EventType.ATXFER_ENDED,
+        EventType.ATXFER_ERROR,
+        EventType.THREEWAY_ATXFER_RESULT,
+        EventType.ATXFER_THREEWAY_UNLINK,
+        EventType.COMPLETE_ATXFER_RESULT,
+        
+        // 班组长操作 - 监听
+        EventType.SPY_RESULT,
+        EventType.SPY_LINK,
+        EventType.SPY_UNLINK,
+        
+        // 班组长操作 - 三方
+        EventType.THREEWAY_RESULT,
+        EventType.THREEWAY_LINK,
+        EventType.THREEWAY_UNLINK,
+        
+        // 班组长操作 - 耳语
+        EventType.WHISPER_RESULT,
+        EventType.WHISPER_LINK,
+        EventType.WHISPER_UNLINK,
+        
+        // 班组长操作 - 强插
+        EventType.BARGE_RESULT,
+        EventType.BARGE_LINK,
+        EventType.BARGE_UNLINK,
+        
+        // 班组长操作 - 强拆/强下
+        EventType.DISCONNECT_RESULT,
+        EventType.SET_OFFLINE,
+        
+        // 队列与分机状态
+        EventType.QUEUE_STATUS,
+        EventType.EXTENSTATE,
+        
+        // IVR 交互
+        EventType.INTERACT_RETURN,
+        
+        // 转写与回调
         EventType.TRANSCRIPT,
+        EventType.ORDER_CALLBACK,
+        
+        // 网络与质量
+        EventType.PING,
         EventType.WEBRTC_STATS,
       ];
 
