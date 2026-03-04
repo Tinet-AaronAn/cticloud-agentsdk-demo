@@ -212,6 +212,102 @@ ChannelVariable（信道变量）用于在一次呼叫的信令或上下文中�
 - await AgentSDK.sipUnlink();
 - const lgRes = await AgentSDK.logout({ logoutMode: 1, unbindEndpoint: 0 });
 
+### startAtxfer(params) → Promise<SdkResponse>
+- dest：string — 咨询目标号码（坐席号或外线号码）
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 开始咨询：startAtxfer({ dest: '8001' })
+
+前提条件：
+- 已登录且处于通话中（deviceStatus === 4）
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### cancelAtxfer() → Promise<SdkResponse>
+- 无参数；取消当前的咨询
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 取消咨询：cancelAtxfer()
+
+前提条件：
+- 已登录且处于咨询中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### resumeAtxfer() → Promise<SdkResponse>
+- 无参数；恢复咨询
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 恢复咨询：resumeAtxfer()
+
+前提条件：
+- 已登录且处于咨询中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### completeAtxfer() → Promise<SdkResponse>
+- 无参数；完成咨询转接
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 完成转接：completeAtxfer()
+
+前提条件：
+- 已登录且处于咨询中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### threewayAtxfer() → Promise<SdkResponse>
+- 无参数；建立三方咨询
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 三方咨询：threewayAtxfer()
+
+前提条件：
+- 已登录且处于咨询中
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
+### blxfer(params) → Promise<SdkResponse>
+- dest：string — 盲转目标号码（坐席号或外线号码）
+
+返回（SdkResponse）：
+- 成功：{ code: 0, ... }
+- 失败：{ code: 非 0, errorCode, message }
+
+使用场景：
+- 盲转：blxfer({ dest: '8001' })
+
+前提条件：
+- 已登录且处于通话中（deviceStatus === 4）
+
+错误处理：
+- catch(err) → 显示错误提示与日志（err.code/err.message）
+
 ## 统一错误处理策略（建议）
 - 对返回 SdkResponse 的方法：
   - 判定 res.code === 0 → 成功；否则展示失败并记录 { errorCode, message }

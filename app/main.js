@@ -121,6 +121,9 @@
     autoTesting: false,
     toasts: [],
     webrtc: { jitter: '--', packetLoss: '--', rtt: '--' },
+    isOnHold: false,
+    isMuted: false,
+    isConsulting: false,
     theme: 'light',
     configOpen: false,
 
@@ -155,6 +158,47 @@
     },
     get canSetIdle() {
       return this.loggedIn && (this.agentState === 'busy' || this.agentState === 'wrapup');
+    },
+    // 通话控制
+    get canHold() {
+      return this.loggedIn && this.deviceStatus === 4 && !this.isOnHold;
+    },
+    get canUnhold() {
+      return this.loggedIn && this.isOnHold;
+    },
+    get canMute() {
+      return this.loggedIn && this.deviceStatus === 4 && !this.isMuted;
+    },
+    get canUnmute() {
+      return this.loggedIn && this.isMuted;
+    },
+    get canSendDtmf() {
+      return this.loggedIn && this.deviceStatus === 4;
+    },
+    // 转接控制
+    get canStartAtxfer() {
+      // 通话中且未咨询状态可以开始咨询
+      return this.loggedIn && this.deviceStatus === 4 && !this.isConsulting;
+    },
+    get canCancelAtxfer() {
+      // 咨询中可以取消
+      return this.loggedIn && this.isConsulting;
+    },
+    get canResumeAtxfer() {
+      // 咨询中可以恢复
+      return this.loggedIn && this.isConsulting;
+    },
+    get canCompleteAtxfer() {
+      // 咨询中可以完成转接
+      return this.loggedIn && this.isConsulting;
+    },
+    get canThreewayAtxfer() {
+      // 咨询中可以三方
+      return this.loggedIn && this.isConsulting;
+    },
+    get canBlxfer() {
+      // 通话中可以盲转
+      return this.loggedIn && this.deviceStatus === 4;
     },
     get filteredEvents() {
       if (!this.eventFilter) return this.events;
@@ -460,8 +504,209 @@
         const AgentSDK = await getAgentSDK();
         await AgentSDK.sipUnlink();
         this.showToast('已挂断', 'info');
+        // 重置保持和静音状态
+        this.isOnHold = false;
+        this.isMuted = false;
+        this.isConsulting = false;
       } catch (err) {
         this.showToast(`挂断异常: ${err.message}`, 'danger');
+      }
+    },
+
+    // 通话控制
+    async hold() {
+      if (!this.canHold) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.hold();
+        if (res.code === 0) {
+          this.isOnHold = true;
+          this.showToast('已保持', 'warning');
+          this.addEvent('HOLD', res);
+        } else {
+          this.showToast(`保持失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`保持异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async unhold() {
+      if (!this.canUnhold) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.unhold();
+        if (res.code === 0) {
+          this.isOnHold = false;
+          this.showToast('已恢复', 'success');
+          this.addEvent('UNHOLD', res);
+        } else {
+          this.showToast(`恢复失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`恢复异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async mute() {
+      if (!this.canMute) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.mute({ direction: 'sendrecv' });
+        if (res.code === 0) {
+          this.isMuted = true;
+          this.showToast('已静音', 'warning');
+          this.addEvent('MUTE', res);
+        } else {
+          this.showToast(`静音失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`静音异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async unmute() {
+      if (!this.canUnmute) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.unmute({ direction: 'sendrecv' });
+        if (res.code === 0) {
+          this.isMuted = false;
+          this.showToast('已取消静音', 'success');
+          this.addEvent('UNMUTE', res);
+        } else {
+          this.showToast(`取消静音失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`取消静音异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async sendDtmf() {
+      if (!this.canSendDtmf) return;
+      try {
+        const digits = prompt('请输入要发送的 DTMF 数字:');
+        if (!digits) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.sendDtmf({ digits });
+        if (res.code === 0) {
+          this.showToast(`DTMF 已发送: ${digits}`, 'success');
+          this.addEvent('SEND_DTMF', { digits, ...res });
+        } else {
+          this.showToast(`发送失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`发送异常: ${err.message}`, 'danger');
+      }
+    },
+
+    // 转接控制
+    async startAtxfer() {
+      if (!this.canStartAtxfer) return;
+      try {
+        const dest = prompt('请输入咨询目标号码:');
+        if (!dest) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.startAtxfer({ dest });
+        if (res.code === 0) {
+          this.isConsulting = true;
+          this.showToast('咨询已发起', 'info');
+          this.addEvent('START_ATXFER', { dest, ...res });
+        } else {
+          this.showToast(`发起咨询失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`发起咨询异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async cancelAtxfer() {
+      if (!this.canCancelAtxfer) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.cancelAtxfer();
+        if (res.code === 0) {
+          this.isConsulting = false;
+          this.showToast('咨询已取消', 'warning');
+          this.addEvent('CANCEL_ATXFER', res);
+        } else {
+          this.showToast(`取消咨询失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`取消咨询异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async resumeAtxfer() {
+      if (!this.canResumeAtxfer) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.resumeAtxfer();
+        if (res.code === 0) {
+          this.showToast('咨询已恢复', 'success');
+          this.addEvent('RESUME_ATXFER', res);
+        } else {
+          this.showToast(`恢复咨询失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`恢复咨询异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async completeAtxfer() {
+      if (!this.canCompleteAtxfer) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.completeAtxfer();
+        if (res.code === 0) {
+          this.isConsulting = false;
+          this.showToast('转接已完成', 'success');
+          this.addEvent('COMPLETE_ATXFER', res);
+        } else {
+          this.showToast(`完成转接失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`完成转接异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async threewayAtxfer() {
+      if (!this.canThreewayAtxfer) return;
+      try {
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.threewayAtxfer();
+        if (res.code === 0) {
+          this.showToast('三方咨询已建立', 'success');
+          this.addEvent('THREEWAY_ATXFER', res);
+        } else {
+          this.showToast(`三方咨询失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`三方咨询异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async blxfer() {
+      if (!this.canBlxfer) return;
+      try {
+        const dest = prompt('请输入盲转目标号码:');
+        if (!dest) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.blxfer({ dest });
+        if (res.code === 0) {
+          this.isConsulting = false;
+          this.isOnHold = false;
+          this.isMuted = false;
+          this.showToast('盲转已完成', 'success');
+          this.addEvent('BLXFER', { dest, ...res });
+        } else {
+          this.showToast(`盲转失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`盲转异常: ${err.message}`, 'danger');
       }
     },
 
