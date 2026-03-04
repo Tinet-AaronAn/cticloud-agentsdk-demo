@@ -842,6 +842,45 @@
             </div>
           </div>
         </div>
+        
+        <!-- 班组长操作卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon gradient-red">
+              <i class="bi bi-person-workspace"></i>
+            </div>
+            <div>
+              <div class="card-title">班组长操作</div>
+              <div class="card-subtitle">监听 / 强插 / 强拆</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="btn-grid">
+              <button class="btn btn-primary" :disabled="!canSetPause" @click="setPause">
+                <i class="bi bi-pause-btn"></i> 置忙
+              </button>
+              <button class="btn btn-success" :disabled="!canSetUnpause" @click="setUnpause">
+                <i class="bi bi-play-btn"></i> 置闲
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top: 8px;">
+              <button class="btn btn-info" :disabled="!canSpy" @click="spy">
+                <i class="bi bi-ear"></i> 监听
+              </button>
+              <button class="btn btn-warning" :disabled="!canWhisper" @click="whisper">
+                <i class="bi bi-mic"></i> 耳语
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top: 8px;">
+              <button class="btn btn-danger" :disabled="!canBarge" @click="barge">
+                <i class="bi bi-telephone-inbound"></i> 强插
+              </button>
+              <button class="btn btn-dark" :disabled="!canDisconnect" @click="disconnect">
+                <i class="bi bi-telephone-x"></i> 强拆
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="grid-3">

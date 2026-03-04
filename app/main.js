@@ -200,6 +200,25 @@
       // 通话中可以盲转
       return this.loggedIn && this.deviceStatus === 4;
     },
+    // 班组长操作
+    get canSetPause() {
+      return this.loggedIn && this.agentState === 'idle';
+    },
+    get canSetUnpause() {
+      return this.loggedIn && (this.agentState === 'busy' || this.agentState === 'wrapup');
+    },
+    get canSpy() {
+      return this.loggedIn && this.deviceStatus === 4;
+    },
+    get canWhisper() {
+      return this.loggedIn && this.deviceStatus === 4;
+    },
+    get canBarge() {
+      return this.loggedIn && this.deviceStatus === 4;
+    },
+    get canDisconnect() {
+      return this.loggedIn && this.deviceStatus === 4;
+    },
     get filteredEvents() {
       if (!this.eventFilter) return this.events;
       return this.events.filter(e => e.type.includes(this.eventFilter));
@@ -707,6 +726,121 @@
         }
       } catch (err) {
         this.showToast(`盲转异常: ${err.message}`, 'danger');
+      }
+    },
+
+    // 班组长操作
+    async setPause() {
+      if (!this.canSetPause) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.setPause({ agent });
+        if (res.code === 0) {
+          this.showToast('已置忙', 'warning');
+          this.addEvent('SET_PAUSE', { agent, ...res });
+        } else {
+          this.showToast(`置忙失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`置忙异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async setUnpause() {
+      if (!this.canSetUnpause) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.setUnpause({ agent });
+        if (res.code === 0) {
+          this.showToast('已置闲', 'success');
+          this.addEvent('SET_UNPAUSE', { agent, ...res });
+        } else {
+          this.showToast(`置闲失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`置闲异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async spy() {
+      if (!this.canSpy) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.spy({ agent });
+        if (res.code === 0) {
+          this.showToast('监听已启动', 'success');
+          this.addEvent('SPY', { agent, ...res });
+        } else {
+          this.showToast(`监听失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`监听异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async whisper() {
+      if (!this.canWhisper) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.whisper({ agent });
+        if (res.code === 0) {
+          this.showToast('耳语已启动', 'success');
+          this.addEvent('WHISPER', { agent, ...res });
+        } else {
+          this.showToast(`耳语失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`耳语异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async barge() {
+      if (!this.canBarge) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.barge({ agent });
+        if (res.code === 0) {
+          this.showToast('强插已启动', 'success');
+          this.addEvent('BARGE', { agent, ...res });
+        } else {
+          this.showToast(`强插失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`强插异常: ${err.message}`, 'danger');
+      }
+    },
+
+    async disconnect() {
+      if (!this.canDisconnect) return;
+      try {
+        const agent = prompt('请输入目标坐席号:');
+        if (!agent) return;
+        
+        const AgentSDK = await getAgentSDK();
+        const res = await AgentSDK.disconnect({ agent });
+        if (res.code === 0) {
+          this.showToast('强拆已执行', 'success');
+          this.addEvent('DISCONNECT', { agent, ...res });
+        } else {
+          this.showToast(`强拆失败: ${res.message || res.errorCode}`, 'danger');
+        }
+      } catch (err) {
+        this.showToast(`强拆异常: ${err.message}`, 'danger');
       }
     },
 
