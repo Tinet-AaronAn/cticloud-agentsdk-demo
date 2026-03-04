@@ -290,6 +290,48 @@ test.describe('集成测试（真实环境）', () => {
     // 注意：完整自测流程较长，这里只验证启动
   });
 
+  // ==================== 转接控制测试 ====================
+
+  test('TC-INT-TRANSFER-001: 未登录时转接按钮禁用', async ({ page }) => {
+    // 等待页面加载完成
+    await page.waitForLoadState('networkidle');
+    
+    // 通过转接控制卡片定位按钮
+    const transferCard = page.locator('.card').filter({ hasText: '转接控制' });
+    
+    // 所有转接按钮都应该禁用
+    await expect(transferCard.getByRole('button', { name: '开始咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '取消咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '恢复咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '完成转接' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '三方咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '盲转' })).toBeDisabled();
+    
+    console.log('✅ 未登录时转接按钮禁用');
+  });
+
+  test('TC-INT-TRANSFER-002: 空闲状态转接按钮禁用', async ({ page }) => {
+    // 登录
+    await page.getByRole('button', { name: /登录/ }).click();
+    await waitForEvent(page, 'agentStatus', 30000);
+    
+    // 等待状态稳定
+    await page.waitForTimeout(1000);
+    
+    // 通过转接控制卡片定位按钮
+    const transferCard = page.locator('.card').filter({ hasText: '转接控制' });
+    
+    // 空闲状态下，所有转接按钮应该禁用（因为没有通话）
+    await expect(transferCard.getByRole('button', { name: '开始咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '取消咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '恢复咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '完成转接' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '三方咨询' })).toBeDisabled();
+    await expect(transferCard.getByRole('button', { name: '盲转' })).toBeDisabled();
+    
+    console.log('✅ 空闲状态转接按钮禁用');
+  });
+
 });
 
 // ==================== 测试工具函数 ====================
