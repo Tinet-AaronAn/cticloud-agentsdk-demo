@@ -58,12 +58,14 @@ test.describe('cticloud-agentsdk-demo 测试套件', () => {
   });
 
   test('TC-BTN-006: 未登录时置忙按钮禁用', async ({ page }) => {
-    const busyBtn = page.getByRole('button', { name: /置忙/ });
+    // 页面上有多个置忙按钮，使用 .first() 选择第一个
+    const busyBtn = page.getByRole('button', { name: /置忙/ }).first();
     await expect(busyBtn).toBeDisabled();
   });
 
   test('TC-BTN-007: 未登录时置闲按钮禁用', async ({ page }) => {
-    const idleBtn = page.getByRole('button', { name: /置闲/ });
+    // 页面上有多个置闲按钮，使用 .first() 选择第一个
+    const idleBtn = page.getByRole('button', { name: /置闲/ }).first();
     await expect(idleBtn).toBeDisabled();
   });
 

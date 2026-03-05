@@ -1,22 +1,226 @@
-name: CI
+name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+# 并发控制：同一分支只运行一个 workflow
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  # ==================== 代码检查 ====================
+  lint:
+    name: 代码检查
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Verify structure
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Verify project structure
         run: |
-          test -f app/index.html && echo OK || (echo 'missing app/index.html' && exit 1)
-          test -f docs/PRD.md && echo OK || (echo 'missing docs/PRD.md' && exit 1)
-      - name: List files
-        run: ls -la
+          echo "📋 验证项目结构..."
+          test -f app/index.html && echo "✅ app/index.html" || (echo '❌ missing app/index.html' && exit 1)
+          test -f docs/PRD.md && echo "✅ docs/PRD.md" || (echo '❌ missing docs/PRD.md' && exit 1)
+          test -f playwright.config.ts && echo "✅ playwright.config.ts" || echo "⚠️  playwright.config.ts not found"
+          echo "✅ 项目结构验证通过"
+
+  # ==================== E2E 测试 ====================
+  e2e-test:
+    name: E2E 测试
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        
+      - name: Run E2E tests
+        run: npm test
+        env:
+          CI: true
+          
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## 📊 测试结果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f test-report/index.html ]; then
+            echo "✅ 测试报告已生成" >> $GITHUB_STEP_SUMMARY
+            echo "- 查看详细报告：下载 \`playwright-report\` artifact" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  测试报告未生成" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test-report/
+          retention-days: 30
+          
+      - name: Upload test videos (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-videos
+          path: test-results/
+          retention-days: 7
+
+  # ==================== 集成测试（仅 main 分支）====================
+  integration-test:
+    name: 集成测试（真实环境）
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        
+      - name: Run integration tests
+        run: npm test -- tests/integration.spec.ts
+        env:
+          CI: true
+        continue-on-error: true  # 集成测试失败不阻止部署
+        
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## 📊 集成测试结果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️  集成测试在真实环境中运行，失败不会阻止部署" >> $GITHUB_STEP_SUMMARY
+        
+      - name: Upload integration test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-report
+          path: test-report/
+          retention-days: 30
+
+  # ==================== PR 评论（测试结果）====================
+  pr-comment:
+    name: PR 测试结果评论
+    runs-on: ubuntu-latest
+    needs: [e2e-test]
+    if: always() && github.event_name == 'pull_request'
+    
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('## 🧪 E2E 测试结果')
+            );
+            
+            const body = `## 🧪 E2E 测试结果
+            
+            | 状态 | 说明 |
+            |------|------|
+            | ${{ needs.e2e-test.result == 'success' && '✅ 通过' || '❌ 失败' }} | ${{ needs.e2e-test.result == 'success' && '所有测试用例通过' || '部分测试用例失败' }} |
+            
+            ### 📥 下载测试报告
+            - 在 GitHub Actions 页面下载 \`playwright-report\` artifact
+            - 解压后打开 \`index.html\` 查看详细报告
+            
+            ---
+            *🦞 由陆测 (Test Agent) 自动生成*
+            `;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  # ==================== 部署到 GitHub Pages ====================
+  deploy:
+    name: 部署到 GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [e2e-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    permissions:
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'app'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 部署成功" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "访问地址：${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY

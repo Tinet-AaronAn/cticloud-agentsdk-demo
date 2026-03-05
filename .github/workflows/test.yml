@@ -1,0 +1,104 @@
+name: 🧪 手动测试
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: '测试类型'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ui
+          - integration
+          - supervisor-state
+      browser:
+        description: '浏览器'
+        required: true
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+      debug:
+        description: '调试模式'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  test:
+    name: 运行测试
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ inputs.browser }}
+        
+      - name: Run UI tests
+        if: inputs.test_type == 'all' || inputs.test_type == 'ui'
+        run: npm test -- tests/demo.spec.ts --project=${{ inputs.browser }}
+        env:
+          CI: true
+          DEBUG: ${{ inputs.debug && 'pw:api' || '' }}
+          
+      - name: Run integration tests
+        if: inputs.test_type == 'all' || inputs.test_type == 'integration'
+        run: npm test -- tests/integration.spec.ts --project=${{ inputs.browser }}
+        env:
+          CI: true
+          DEBUG: ${{ inputs.debug && 'pw:api' || '' }}
+        continue-on-error: true
+        
+      - name: Run supervisor state tests
+        if: inputs.test_type == 'all' || inputs.test_type == 'supervisor-state'
+        run: npm test -- tests/supervisor-state.spec.js --project=${{ inputs.browser }}
+        env:
+          CI: true
+          DEBUG: ${{ inputs.debug && 'pw:api' || '' }}
+        
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ inputs.test_type }}-${{ inputs.browser }}
+          path: test-report/
+          retention-days: 30
+          
+      - name: Upload test traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ inputs.test_type }}-${{ inputs.browser }}
+          path: test-results/
+          retention-days: 7
+
+  notify:
+    name: 通知测试结果
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    
+    steps:
+      - name: Check test result
+        run: |
+          echo "## 🧪 测试完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**测试类型**: ${{ inputs.test_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**浏览器**: ${{ inputs.browser }}" >> $GITHUB_STEP_SUMMARY
+          echo "**调试模式**: ${{ inputs.debug }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 下载 \`playwright-report-${{ inputs.test_type }}-${{ inputs.browser }}\` artifact 查看详细报告" >> $GITHUB_STEP_SUMMARY
