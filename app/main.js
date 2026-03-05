@@ -867,15 +867,21 @@
     async startAtxfer() {
       if (!this.canStartAtxfer) return;
       try {
-        const dest = prompt('请输入咨询目标号码:');
-        if (!dest) return;
+        const targetType = prompt('请输入目标类型:\n0 = 外线号码\n1 = 坐席号\n2 = 分机号');
+        if (!targetType) return;
+        
+        const target = prompt('请输入目标号码:');
+        if (!target) return;
         
         const AgentSDK = await getAgentSDK();
-        const res = await AgentSDK.startAtxfer({ dest });
+        const res = await AgentSDK.startAtxfer({ 
+          targetType: parseInt(targetType),
+          target 
+        });
         if (res.code === 0) {
           this.isConsulting = true;
           this.showToast('咨询已发起', 'info');
-          this.addEvent('START_ATXFER', { dest, ...res });
+          this.addEvent('START_ATXFER', { targetType, target, ...res });
         } else {
           this.showToast(`发起咨询失败: ${res.message || res.errorCode}`, 'danger');
         }
@@ -953,17 +959,23 @@
     async blxfer() {
       if (!this.canBlxfer) return;
       try {
-        const dest = prompt('请输入盲转目标号码:');
-        if (!dest) return;
+        const targetType = prompt('请输入目标类型:\n0 = 外线号码\n1 = 坐席号\n2 = 分机号\n3 = IVR节点');
+        if (!targetType) return;
+        
+        const target = prompt('请输入目标号码:');
+        if (!target) return;
         
         const AgentSDK = await getAgentSDK();
-        const res = await AgentSDK.blxfer({ dest });
+        const res = await AgentSDK.blxfer({ 
+          targetType: parseInt(targetType),
+          target 
+        });
         if (res.code === 0) {
           this.isConsulting = false;
           this.isOnHold = false;
           this.isMuted = false;
           this.showToast('盲转已完成', 'success');
-          this.addEvent('BLXFER', { dest, ...res });
+          this.addEvent('BLXFER', { targetType, target, ...res });
         } else {
           this.showToast(`盲转失败: ${res.message || res.errorCode}`, 'danger');
         }
