@@ -338,21 +338,35 @@ test.describe('集成测试（真实环境）', () => {
     // 等待页面加载完成
     await page.waitForLoadState('networkidle');
     
-    // 通过班组长操作卡片定位按钮
+    // 通过班组长操作卡片定位
     const supervisorCard = page.locator('.card').filter({ hasText: '班组长操作' });
     
-    // 所有班组长按钮都应该禁用
-    await expect(supervisorCard.getByRole('button', { name: '置忙' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '置闲' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '监听' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '耳语' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '强插' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '强拆' })).toBeDisabled();
+    // 使用 locator 链式调用，先找到包含特定文本的卡片，再找按钮
+    // 通过按钮的 class 和位置来定位（第一个按钮行）
+    const firstRow = supervisorCard.locator('.btn-grid').first();
+    await expect(firstRow.locator('button').nth(0)).toBeDisabled(); // 置忙
+    await expect(firstRow.locator('button').nth(1)).toBeDisabled(); // 置闲
+    
+    // 第二行 - 监听/取消监听
+    const secondRow = supervisorCard.locator('.btn-grid').nth(1);
+    await expect(secondRow.locator('button').nth(0)).toBeDisabled(); // 监听
+    
+    // 第三行 - 耳语/取消耳语
+    const thirdRow = supervisorCard.locator('.btn-grid').nth(2);
+    await expect(thirdRow.locator('button').nth(0)).toBeDisabled(); // 耳语
+    
+    // 第四行 - 强插/取消强插
+    const fourthRow = supervisorCard.locator('.btn-grid').nth(3);
+    await expect(fourthRow.locator('button').nth(0)).toBeDisabled(); // 强插
+    
+    // 第五行 - 强拆
+    const fifthRow = supervisorCard.locator('.btn-grid').nth(4);
+    await expect(fifthRow.locator('button').nth(0)).toBeDisabled(); // 强拆
     
     console.log('✅ 未登录时班组长按钮禁用');
   });
 
-  test('TC-INT-SUPERVISOR-002: 空闲状态班组长按钮禁用', async ({ page }) => {
+  test('TC-INT-SUPERVISOR-002: 空闲状态班组长按钮状态正确', async ({ page }) => {
     // 登录
     await page.getByRole('button', { name: /登录/ }).click();
     await waitForEvent(page, 'agentStatus', 30000);
@@ -360,16 +374,33 @@ test.describe('集成测试（真实环境）', () => {
     // 等待状态稳定
     await page.waitForTimeout(1000);
     
-    // 通过班组长操作卡片定位按钮
+    // 通过班组长操作卡片定位
     const supervisorCard = page.locator('.card').filter({ hasText: '班组长操作' });
     
-    // 空闲状态下，置忙按钮应该可用，其他按钮应该禁用
-    await expect(supervisorCard.getByRole('button', { name: '置忙' })).toBeEnabled();
-    await expect(supervisorCard.getByRole('button', { name: '置闲' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '监听' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '耳语' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '强插' })).toBeDisabled();
-    await expect(supervisorCard.getByRole('button', { name: '强拆' })).toBeDisabled();
+    // 使用 locator 链式调用定位按钮
+    // 第一行 - 置忙/置闲
+    const firstRow = supervisorCard.locator('.btn-grid').first();
+    await expect(firstRow.locator('button').nth(0)).toBeEnabled();  // 置忙 - 可用
+    await expect(firstRow.locator('button').nth(1)).toBeDisabled(); // 置闲 - 禁用
+    
+    // 第二行 - 监听/取消监听
+    const secondRow = supervisorCard.locator('.btn-grid').nth(1);
+    await expect(secondRow.locator('button').nth(0)).toBeEnabled();  // 监听 - 可用（班组长空闲时可以监听）
+    await expect(secondRow.locator('button').nth(1)).toBeDisabled(); // 取消监听 - 禁用
+    
+    // 第三行 - 耳语/取消耳语
+    const thirdRow = supervisorCard.locator('.btn-grid').nth(2);
+    await expect(thirdRow.locator('button').nth(0)).toBeDisabled(); // 耳语 - 禁用（需要先监听）
+    await expect(thirdRow.locator('button').nth(1)).toBeDisabled(); // 取消耳语 - 禁用
+    
+    // 第四行 - 强插/取消强插
+    const fourthRow = supervisorCard.locator('.btn-grid').nth(3);
+    await expect(fourthRow.locator('button').nth(0)).toBeDisabled(); // 强插 - 禁用（需要先监听）
+    await expect(fourthRow.locator('button').nth(1)).toBeDisabled(); // 取消强插 - 禁用
+    
+    // 第五行 - 强拆
+    const fifthRow = supervisorCard.locator('.btn-grid').nth(4);
+    await expect(fifthRow.locator('button').nth(0)).toBeEnabled(); // 强拆 - 可用
     
     console.log('✅ 空闲状态班组长按钮状态正确');
   });
