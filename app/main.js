@@ -145,7 +145,7 @@
     get statusText() {
       if (!this.loggedIn) return '离线';
       if (this.deviceStatus === 4) return '通话中';
-      if (this.deviceStatus === 3) return '振铃';
+      if (this.deviceStatus === 3) return '振铃中';
       if (this.agentState === 'idle') return '空闲';
       if (this.agentState === 'busy') return '忙碌';
       if (this.agentState === 'wrapup') return '整理';
@@ -215,9 +215,9 @@
       return this.loggedIn && (this.agentState === 'busy' || this.agentState === 'wrapup');
     },
     // 班组长操作 - 状态控制
-    // 监听：已登录 + 不在自己通话中
+    // 监听：已登录 + 不在自己振铃或通话中
     get canSpy() {
-      return this.loggedIn && this.deviceStatus !== 3 && !this.isSpying;
+      return this.loggedIn && this.deviceStatus !== 3 && this.deviceStatus !== 4 && !this.isSpying;
     },
     // 耳语：已登录 + 正在监听中（监听后可升级为耳语）
     get canWhisper() {
@@ -450,10 +450,11 @@
       const statusMap = {
         0: '未绑定',
         1: '空闲',
-        2: '振铃中',
-        3: '通话中',
-        4: '话后处理',
-        5: '离线'
+        2: '等待',
+        3: '振铃中',
+        4: '通话中',
+        5: '话后处理',
+        6: '离线'
       };
       return statusMap[status] || `未知(${status})`;
     },
@@ -649,6 +650,30 @@
           }
           if (e.eventType === 'threewayUnlink') {
             this.isSpying = false;
+          }
+          
+          // 咨询转接状态跟踪
+          if (e.eventType === 'atxferStart') {
+            this.isConsulting = true;
+          }
+          if (e.eventType === 'atxferLink') {
+            this.isConsulting = true;
+          }
+          if (e.eventType === 'atxferEnded') {
+            this.isConsulting = false;
+          }
+          if (e.eventType === 'atxferError') {
+            this.isConsulting = false;
+          }
+          if (e.eventType === 'completeAtxferResult') {
+            this.isConsulting = false;
+          }
+          if (e.eventType === 'threewayAtxferResult') {
+            // 三方咨询后仍保持咨询状态
+            this.isConsulting = true;
+          }
+          if (e.eventType === 'atxferThreewayUnlink') {
+            this.isConsulting = false;
           }
         });
       });
